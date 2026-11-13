@@ -1,3 +1,6 @@
+# Central de Devoluções — Copyright (c) 2026 Geovanny Santana.
+# Licenciado sob a PolyForm Noncommercial 1.0.0 (ver LICENSE).
+# Uso comercial ou venda exigem autorização por escrito do autor.
 """Converte as devoluções da Shein (return-order/details) para o modelo normalizado.
 
 Na Shein BR as devoluções já entram aceitas: o comprador manda o pacote para o armazém da Shein, que repassa

@@ -1,3 +1,6 @@
+# Central de Devoluções — Copyright (c) 2026 Geovanny Santana.
+# Licenciado sob a PolyForm Noncommercial 1.0.0 (ver LICENSE).
+# Uso comercial ou venda exigem autorização por escrito do autor.
 """Teste SOMENTE LEITURA do vínculo devolução -> pedido/NF no Olist. Não grava nada.
 
     .venv\\Scripts\\python scripts\\testar_olist.py [quantidade] [plataforma]

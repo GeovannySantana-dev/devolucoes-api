@@ -1,3 +1,6 @@
+# Central de Devoluções — Copyright (c) 2026 Geovanny Santana.
+# Licenciado sob a PolyForm Noncommercial 1.0.0 (ver LICENSE).
+# Uso comercial ou venda exigem autorização por escrito do autor.
 """Confirma na Shein o recebimento das devoluções já conferidas na bancada.
 
 Na Shein a loja não aprova nem recusa: depois que o pacote chega (status 6 Entregue / 7 Entrega pendente), a

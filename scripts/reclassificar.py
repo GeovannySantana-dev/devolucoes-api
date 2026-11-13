@@ -1,3 +1,6 @@
+# Central de Devoluções — Copyright (c) 2026 Geovanny Santana.
+# Licenciado sob a PolyForm Noncommercial 1.0.0 (ver LICENSE).
+# Uso comercial ou venda exigem autorização por escrito do autor.
 """Reaplica as regras de sugestão (revenda/defeito) nas devoluções ainda não conferidas
 e recalcula o custo de todas as devoluções.
 

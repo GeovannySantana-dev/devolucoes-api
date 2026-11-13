@@ -1,3 +1,6 @@
+# Central de Devoluções — Copyright (c) 2026 Geovanny Santana.
+# Licenciado sob a PolyForm Noncommercial 1.0.0 (ver LICENSE).
+# Uso comercial ou venda exigem autorização por escrito do autor.
 """Roda a sincronização das lojas pela linha de comando (sem precisar da API no ar).
 
     .venv\\Scripts\\python scripts\\sincronizar.py            # todas as lojas ativas

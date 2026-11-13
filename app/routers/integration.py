@@ -1,3 +1,6 @@
+# Central de Devoluções — Copyright (c) 2026 Geovanny Santana.
+# Licenciado sob a PolyForm Noncommercial 1.0.0 (ver LICENSE).
+# Uso comercial ou venda exigem autorização por escrito do autor.
 """API de integração, somente leitura: quantidades e custos das devoluções para outros sistemas internos.
 
 Autenticação: header `X-API-Key` com uma chave de integração (`pdv_...`), criada pelo gestor em

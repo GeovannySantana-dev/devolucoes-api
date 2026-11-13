@@ -1,3 +1,6 @@
+# Central de Devoluções — Copyright (c) 2026 Geovanny Santana.
+# Licenciado sob a PolyForm Noncommercial 1.0.0 (ver LICENSE).
+# Uso comercial ou venda exigem autorização por escrito do autor.
 """Cópia das fotos e vídeos das conferências no Supabase Storage (bucket privado MEDIA_BACKUP_BUCKET).
 
 Roda a cada 15 min nas rotinas: manda o que ainda não foi copiado, no mesmo caminho da pasta local

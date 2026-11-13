@@ -1,3 +1,6 @@
+# Central de Devoluções — Copyright (c) 2026 Geovanny Santana.
+# Licenciado sob a PolyForm Noncommercial 1.0.0 (ver LICENSE).
+# Uso comercial ou venda exigem autorização por escrito do autor.
 """NF de venda a partir do XML da NF-e, no mesmo formato da nota que o Olist devolve (nota.fiscal.obter).
 
 Usado quando a venda não existe mais no Olist (ex.: limpeza para liberar espaço): os XMLs ficam em arquivos .zip

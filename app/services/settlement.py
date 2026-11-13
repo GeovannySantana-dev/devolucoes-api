@@ -1,3 +1,6 @@
+# Central de Devoluções — Copyright (c) 2026 Geovanny Santana.
+# Licenciado sob a PolyForm Noncommercial 1.0.0 (ver LICENSE).
+# Uso comercial ou venda exigem autorização por escrito do autor.
 """Custo confirmado das devoluções da Shopee e do Mercado Livre, pelo financeiro de cada plataforma.
 
 Mesma ideia do TikTok (ver tiktok_settlement): enquanto a devolução está aberta o custo é estimado; depois que

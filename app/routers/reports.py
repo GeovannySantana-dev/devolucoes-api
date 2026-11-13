@@ -1,3 +1,6 @@
+# Central de Devoluções — Copyright (c) 2026 Geovanny Santana.
+# Licenciado sob a PolyForm Noncommercial 1.0.0 (ver LICENSE).
+# Uso comercial ou venda exigem autorização por escrito do autor.
 """Relatórios e métricas de devoluções.
 
 Todos aceitam os mesmos filtros: date_from/date_to (data da solicitação), platform e store_id.

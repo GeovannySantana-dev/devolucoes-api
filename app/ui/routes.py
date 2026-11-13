@@ -1,3 +1,6 @@
+# Central de Devoluções — Copyright (c) 2026 Geovanny Santana.
+# Licenciado sob a PolyForm Noncommercial 1.0.0 (ver LICENSE).
+# Uso comercial ou venda exigem autorização por escrito do autor.
 """Telas da equipe (celular primeiro): fila, detalhe, conferência, decisão e usuários.
 
 Páginas HTML geradas no servidor. Toda ação é um formulário que redireciona de volta (POST → GET),

@@ -1,3 +1,6 @@
+# Central de Devoluções — Copyright (c) 2026 Geovanny Santana.
+# Licenciado sob a PolyForm Noncommercial 1.0.0 (ver LICENSE).
+# Uso comercial ou venda exigem autorização por escrito do autor.
 """Cliente da API v2 do Olist ERP (antigo Tiny).
 
 Docs: https://api-docs.erp.olist.com/api-v2

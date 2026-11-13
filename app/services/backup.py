@@ -1,3 +1,6 @@
+# Central de Devoluções — Copyright (c) 2026 Geovanny Santana.
+# Licenciado sob a PolyForm Noncommercial 1.0.0 (ver LICENSE).
+# Uso comercial ou venda exigem autorização por escrito do autor.
 """Backup diário do banco (o plano gratuito do Supabase não guarda backups restauráveis).
 
 Uma vez por dia, dentro das rotinas: exporta as tabelas do sistema para um JSON compactado.

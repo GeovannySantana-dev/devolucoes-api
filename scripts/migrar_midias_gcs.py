@@ -1,3 +1,6 @@
+# Central de Devoluções — Copyright (c) 2026 Geovanny Santana.
+# Licenciado sob a PolyForm Noncommercial 1.0.0 (ver LICENSE).
+# Uso comercial ou venda exigem autorização por escrito do autor.
 """Copia as fotos/vídeos da pasta local (MEDIA_DIR) para o Google Cloud Storage (GCS_BUCKET).
 
 Rodar uma vez no dia do deploy, antes de trocar MEDIA_BACKEND para gcs. O caminho gravado no banco não

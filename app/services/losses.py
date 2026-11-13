@@ -1,3 +1,6 @@
+# Central de Devoluções — Copyright (c) 2026 Geovanny Santana.
+# Licenciado sob a PolyForm Noncommercial 1.0.0 (ver LICENSE).
+# Uso comercial ou venda exigem autorização por escrito do autor.
 """Perdas do mês: peças conferidas como defeito, que são descartadas.
 
 Viram perda no IRPJ/CSLL com a NF de baixa de estoque por perda (CFOP 5.927), feita por mês. O contador pede

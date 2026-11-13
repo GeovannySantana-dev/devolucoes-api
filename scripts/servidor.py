@@ -1,3 +1,6 @@
+# Central de Devoluções — Copyright (c) 2026 Geovanny Santana.
+# Licenciado sob a PolyForm Noncommercial 1.0.0 (ver LICENSE).
+# Uso comercial ou venda exigem autorização por escrito do autor.
 """Servidor das telas (neste PC, publicado na internet pelo Tailscale Funnel).
 
 Escuta só neste computador (127.0.0.1): o acesso é pelo endereço https do Funnel, que repassa para cá.

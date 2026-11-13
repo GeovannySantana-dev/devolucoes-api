@@ -1,3 +1,6 @@
+# Central de Devoluções — Copyright (c) 2026 Geovanny Santana.
+# Licenciado sob a PolyForm Noncommercial 1.0.0 (ver LICENSE).
+# Uso comercial ou venda exigem autorização por escrito do autor.
 """Envia um e-mail de teste com o resumo atual das devoluções, para conferir a configuração SMTP do .env.
 
     .venv\\Scripts\\python scripts\\testar_email.py

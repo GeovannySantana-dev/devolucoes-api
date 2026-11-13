@@ -1,3 +1,6 @@
+# Central de Devoluções — Copyright (c) 2026 Geovanny Santana.
+# Licenciado sob a PolyForm Noncommercial 1.0.0 (ver LICENSE).
+# Uso comercial ou venda exigem autorização por escrito do autor.
 """Custo de cada peça pelo modelo, a partir do início do SKU (tabela product_cost_models).
 
 Vale o início mais longo que casar, sempre num limite de "-" (VCA-PRETLIS-M → VCA-PRETLIS, listrado; VCA-MANTEI-G →

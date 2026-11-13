@@ -1,3 +1,6 @@
+# Central de Devoluções — Copyright (c) 2026 Geovanny Santana.
+# Licenciado sob a PolyForm Noncommercial 1.0.0 (ver LICENSE).
+# Uso comercial ou venda exigem autorização por escrito do autor.
 """Revisão das devoluções do Mercado Livre ("Já revisei") depois da conferência na bancada.
 
 O ML reembolsa o comprador e depois dá alguns dias para a loja revisar a peça que voltou. Se a loja não

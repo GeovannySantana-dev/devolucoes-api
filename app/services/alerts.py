@@ -1,3 +1,6 @@
+# Central de Devoluções — Copyright (c) 2026 Geovanny Santana.
+# Licenciado sob a PolyForm Noncommercial 1.0.0 (ver LICENSE).
+# Uso comercial ou venda exigem autorização por escrito do autor.
 """Avisos por e-mail: resumo nos horários configurados (padrão 8h e 14h) e alerta de prazo urgente.
 
 Roda dentro das rotinas (POST /jobs/run ou scripts/rotinas.py, a cada 15 min). O que já foi enviado

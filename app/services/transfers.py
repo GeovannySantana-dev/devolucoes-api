@@ -1,3 +1,6 @@
+# Central de Devoluções — Copyright (c) 2026 Geovanny Santana.
+# Licenciado sob a PolyForm Noncommercial 1.0.0 (ver LICENSE).
+# Uso comercial ou venda exigem autorização por escrito do autor.
 """Lotes de transferência das peças de revenda entre a matriz (SP, conta 1 do Olist) e a filial (MS, conta 2).
 
 Como o contador orientou: a NF de devolução entra na matriz, mas a peça fica fisicamente na filial (MS). Defeito e

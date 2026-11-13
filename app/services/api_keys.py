@@ -1,3 +1,6 @@
+# Central de Devoluções — Copyright (c) 2026 Geovanny Santana.
+# Licenciado sob a PolyForm Noncommercial 1.0.0 (ver LICENSE).
+# Uso comercial ou venda exigem autorização por escrito do autor.
 """Chaves de API de integração (somente leitura) para outros sistemas internos.
 
 A chave completa só existe no momento da criação; no banco fica o hash SHA-256 (a chave é aleatória

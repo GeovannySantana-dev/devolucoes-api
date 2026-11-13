@@ -1,3 +1,6 @@
+# Central de Devoluções — Copyright (c) 2026 Geovanny Santana.
+# Licenciado sob a PolyForm Noncommercial 1.0.0 (ver LICENSE).
+# Uso comercial ou venda exigem autorização por escrito do autor.
 """Produtividade da bancada: conferências por dia e por hora, tempo por pedido, ponto e custo por pacote.
 
 De onde vêm os números:

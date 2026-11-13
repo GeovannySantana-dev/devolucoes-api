@@ -1,3 +1,6 @@
+# Central de Devoluções — Copyright (c) 2026 Geovanny Santana.
+# Licenciado sob a PolyForm Noncommercial 1.0.0 (ver LICENSE).
+# Uso comercial ou venda exigem autorização por escrito do autor.
 """Aviso ao gestor quando uma integração para de funcionar (token vencido, loja sem sincronizar, rotina com erro).
 
 Roda no fim das rotinas, por e-mail para ADMIN_EMAILS (ou ALERT_EMAILS, se ADMIN_EMAILS estiver vazio).

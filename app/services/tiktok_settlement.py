@@ -1,3 +1,6 @@
+# Central de Devoluções — Copyright (c) 2026 Geovanny Santana.
+# Licenciado sob a PolyForm Noncommercial 1.0.0 (ver LICENSE).
+# Uso comercial ou venda exigem autorização por escrito do autor.
 """Custo real das devoluções do TikTok, pelo extrato financeiro do pedido.
 
 Enquanto a devolução está aberta, o app usa a previsão do frete que vem na própria devolução

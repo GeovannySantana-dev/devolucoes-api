@@ -1,3 +1,6 @@
+# Central de Devoluções — Copyright (c) 2026 Geovanny Santana.
+# Licenciado sob a PolyForm Noncommercial 1.0.0 (ver LICENSE).
+# Uso comercial ou venda exigem autorização por escrito do autor.
 """Custo real das devoluções da Shein, pelo extrato financeiro (`/finance/get-check-order-list`).
 
 Cada lançamento do extrato tem um tipo (`secondOrderType`) e o número de negócio (`bzOrderNo`): o número do

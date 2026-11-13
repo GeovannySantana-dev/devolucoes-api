@@ -1,3 +1,6 @@
+# Central de Devoluções — Copyright (c) 2026 Geovanny Santana.
+# Licenciado sob a PolyForm Noncommercial 1.0.0 (ver LICENSE).
+# Uso comercial ou venda exigem autorização por escrito do autor.
 """Fluxo da devolução no Olist ERP.
 
 1. Vínculo: acha o pedido no Olist pelo nº do marketplace e a NF de venda.

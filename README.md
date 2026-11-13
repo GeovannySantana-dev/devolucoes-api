@@ -166,6 +166,13 @@ tests/            300 testes
 - [Guia técnico](docs/guia-tecnico.md): regras de cada marketplace, fluxo da NF, custos e endpoints
 - [API de integração](docs/api-integracao.md): API somente leitura para outros sistemas
 
+## Licença e autoria
+
+Copyright (c) 2026 Geovanny Santana. Licenciado sob a
+[PolyForm Noncommercial 1.0.0](LICENSE): o código pode ser visto, estudado e usado para fins não comerciais,
+mas **qualquer uso comercial — vender, revender, sublicenciar, oferecer como serviço ou operar com fins
+lucrativos — exige autorização por escrito do autor**. Ver [AUTHORS](AUTHORS).
+
 ## Autor
 
 [@GeovannySantana-dev](https://github.com/GeovannySantana-dev)

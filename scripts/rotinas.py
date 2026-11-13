@@ -1,3 +1,6 @@
+# Central de Devoluções — Copyright (c) 2026 Geovanny Santana.
+# Licenciado sob a PolyForm Noncommercial 1.0.0 (ver LICENSE).
+# Uso comercial ou venda exigem autorização por escrito do autor.
 """Roda as rotinas periódicas sem a API no ar (mesmo que POST /jobs/run).
 
 Uso provisório enquanto a API não está publicada: o Agendador de Tarefas do Windows chama este script

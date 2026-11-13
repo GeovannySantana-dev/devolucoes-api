@@ -1,3 +1,6 @@
+# Central de Devoluções — Copyright (c) 2026 Geovanny Santana.
+# Licenciado sob a PolyForm Noncommercial 1.0.0 (ver LICENSE).
+# Uso comercial ou venda exigem autorização por escrito do autor.
 """Situação de cada loja conectada: sincronizando, autorização vencendo ou parada (e por quê).
 
 Usada no aviso da fila (só gestão), no selo de cada loja em Integrações e no e-mail de loja parada.

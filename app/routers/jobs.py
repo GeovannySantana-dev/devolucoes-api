@@ -1,3 +1,6 @@
+# Central de Devoluções — Copyright (c) 2026 Geovanny Santana.
+# Licenciado sob a PolyForm Noncommercial 1.0.0 (ver LICENSE).
+# Uso comercial ou venda exigem autorização por escrito do autor.
 """Rotinas periódicas disparadas por um agendador externo (Cloud Scheduler).
 
 No Cloud Run a instância "dorme" sem tráfego, então o agendador interno (APScheduler)
