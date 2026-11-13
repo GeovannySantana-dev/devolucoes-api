@@ -1,0 +1,36 @@
+{# Fotos e vídeos pela câmera do celular. Cada foto/vídeo tirado vai se somando à lista e é enviado
+   no campo "arquivos". Sem JavaScript, cada botão envia o próprio arquivo (o nome "arquivos" fica neles). #}
+{% macro captura(titulo) %}
+<div class="capture" data-capture>
+  <span class="capture-title">{{ titulo }}</span>
+  <input type="file" multiple data-files hidden>
+  <div class="capture-btns">
+    <label class="btn capture-btn">
+      <input type="file" name="arquivos" accept="image/*" capture="environment" data-add>
+      <span aria-hidden="true">📷</span> Tirar foto
+    </label>
+    <label class="btn capture-btn">
+      <input type="file" name="arquivos" accept="video/*" capture="environment" data-add>
+      <span aria-hidden="true">🎥</span> Gravar vídeo
+    </label>
+  </div>
+  <label class="capture-gallery small">
+    <input type="file" name="arquivos" accept="image/*,video/*" multiple data-add>
+    ou escolher da galeria
+  </label>
+  <p class="small muted" data-capture-status aria-live="polite"></p>
+  <div class="previews" data-previews></div>
+  {# Câmera dentro da página (app.js): nada vai para a galeria do celular e o vídeo já sai leve #}
+  <dialog class="scanner cam" data-cam>
+    <div class="cam-view">
+      <video playsinline muted></video>
+      <span class="cam-info" data-cam-info></span>
+    </div>
+    <div class="cam-actions">
+      <button class="btn" type="button" data-cam-close>Concluir</button>
+      <button class="cam-shutter" type="button" data-cam-shot aria-label="Tirar foto"></button>
+      <span class="cam-count small" data-cam-count></span>
+    </div>
+  </dialog>
+</div>
+{% endmacro %}

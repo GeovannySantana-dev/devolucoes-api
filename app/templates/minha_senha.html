@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}Minha senha{% endblock %}
+{% block content %}
+<a class="back" href="/app">← Voltar</a>
+<section class="panel">
+  <h1>Minha senha</h1>
+  <p class="small muted">Use pelo menos 8 caracteres. Neste aparelho você continua conectado. Nos outros, entre de novo com a senha nova.</p>
+  <form method="post" action="/app/minha-senha" class="stack" data-busy>
+    <label>Senha atual
+      <input type="password" name="atual" autocomplete="current-password" required autofocus>
+    </label>
+    <label>Senha nova
+      <input type="password" name="senha" autocomplete="new-password" minlength="8" required>
+    </label>
+    <label>Repita a senha nova
+      <input type="password" name="repetir" autocomplete="new-password" minlength="8" required>
+    </label>
+    <button class="btn btn-primary btn-block" type="submit">Trocar a senha</button>
+  </form>
+  <p class="small muted">Esqueceu a senha atual? Saia e use "Esqueci minha senha" na tela de entrar.</p>
+</section>
+
+<section class="panel">
+  <h2>Outros aparelhos</h2>
+  <p class="small muted">Perdeu o celular ou entrou num aparelho que não é seu? Isto desconecta todos os outros. Neste você continua conectado.</p>
+  <form method="post" action="/app/sair-de-todos" data-confirm="Desconectar todos os outros aparelhos?">
+    <button class="btn btn-block" type="submit">Sair de todos os outros aparelhos</button>
+  </form>
+</section>
+{% endblock %}

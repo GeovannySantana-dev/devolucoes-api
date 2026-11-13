@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+{% block title %}Relatórios{% endblock %}
+{% block page_class %}page-wide{% endblock %}
+{% block content %}
+<div class="dash dash-neon" data-dash
+     data-start="{{ p.start.isoformat() }}" data-end="{{ p.end.isoformat() }}"
+     data-platform="{{ p.platform or '' }}" data-store="{{ p.store_id or '' }}"
+     data-reason="{{ p.reason or '' }}" data-sku="{{ p.sku or '' }}" data-group="{{ p.group }}">
+  <div class="dash-head">
+    <h1>Relatórios</h1>
+    <div class="dash-head-actions">
+      <span class="live-pill" data-live title="Os números se atualizam sozinhos a cada 30 segundos"><i class="live-dot"></i><span data-live-text>ao vivo</span></span>
+      <a class="btn btn-small" data-excel href="/app/relatorios/excel">⬇ Excel</a>
+    </div>
+  </div>
+
+  {# ---------- filtros ---------- #}
+  <section class="dash-filters" aria-label="Filtros">
+    <div class="seg" role="group" aria-label="Período rápido">
+      {% for key, label in periods.items() %}
+      <button type="button" class="seg-btn" data-preset="{{ key }}" data-from="{{ presets[key][0] }}" data-to="{{ presets[key][1] }}">{{ label }}</button>
+      {% endfor %}
+    </div>
+    <div class="dash-row">
+      <label class="field">De <input type="date" data-f="start"></label>
+      <label class="field">Até <input type="date" data-f="end"></label>
+      <label class="field">Marketplace
+        <select data-f="platform">
+          <option value="">Todos</option>
+          {% for key, label in platforms.items() %}<option value="{{ key }}">{{ label }}</option>{% endfor %}
+        </select>
+      </label>
+      <label class="field">Loja <select data-f="store"><option value="">Todas</option></select></label>
+      <div class="seg seg-small" role="group" aria-label="Agrupar por">
+        <button type="button" class="seg-btn" data-group-btn="day">Dia</button>
+        <button type="button" class="seg-btn" data-group-btn="week">Semana</button>
+        <button type="button" class="seg-btn" data-group-btn="month">Mês</button>
+      </div>
+    </div>
+    <div class="dash-chips" data-chips></div>
+  </section>
+
+  <p class="small muted" data-status>Carregando…</p>
+
+  {# ---------- indicadores ---------- #}
+  <section class="tiles tiles-5" data-kpis aria-label="Indicadores"></section>
+
+  {# ---------- evolução + revenda ---------- #}
+  <div class="dash-main">
+    <section class="panel dash-chart">
+      <div class="dash-row-title"><h2 class="kicker">Evolução · devoluções e custo</h2>
+        <span class="series-legend small"><span><b class="sl-total"></b>Devoluções</span><span><b class="sl-cost"></b>Custo</span></span></div>
+      <div class="chart" data-series></div>
+    </section>
+    <section class="panel dash-donut"><h2 class="kicker">Condição na conferência</h2><div data-conditions></div></section>
+  </div>
+
+  {# ---------- marketplace + motivos ---------- #}
+  <div class="dash-pair">
+    <section class="panel"><h2 class="kicker">Por marketplace</h2><div data-platforms></div><p class="small muted hint">Clique para filtrar.</p></section>
+    <section class="panel">
+      <h2 class="kicker">Motivos principais</h2>
+      <div data-reasons></div>
+      <button type="button" class="more-toggle" data-more="reasons" hidden aria-expanded="false"></button>
+      <p class="small muted hint">Clique num motivo para filtrar.</p>
+    </section>
+  </div>
+
+  {# ---------- produtos ---------- #}
+  <section class="panel">
+    <div class="dash-row-title"><h2 class="kicker">Produtos que mais voltam</h2><span class="small muted" data-prod-period></span></div>
+    <div class="prod-filters">
+      <div class="seg seg-small" role="group" aria-label="Período dos produtos">
+        <button type="button" class="seg-btn" data-prod-preset="">Mesmo do painel</button>
+        {% for key, label in periods.items() %}
+        <button type="button" class="seg-btn" data-prod-preset="{{ key }}" data-from="{{ presets[key][0] }}" data-to="{{ presets[key][1] }}">{{ label }}</button>
+        {% endfor %}
+      </div>
+      <div class="dash-row">
+        <label class="field">De <input type="date" data-pf="start"></label>
+        <label class="field">Até <input type="date" data-pf="end"></label>
+      </div>
+    </div>
+    <div class="rank-sort seg seg-small" role="group" aria-label="Ordenar produtos">
+      <button type="button" class="seg-btn" data-sort="total">Mais devoluções</button>
+      <button type="button" class="seg-btn" data-sort="defect_rate">Mais defeito</button>
+      <button type="button" class="seg-btn" data-sort="mismatches">Item diferente</button>
+      <button type="button" class="seg-btn" data-sort="cost">Maior custo</button>
+    </div>
+    <ol class="rank" data-products></ol>
+    <button type="button" class="more-toggle" data-more="products" hidden aria-expanded="false"></button>
+    <div class="rank-legend small" data-rank-legend></div>
+  </section>
+
+  {# ---------- painel lateral: pedidos de origem do produto ---------- #}
+  <div class="drawer-back" data-drawer-back hidden></div>
+  <aside class="drawer" data-drawer hidden aria-label="Pedidos de origem do produto" tabindex="-1">
+    <div class="drawer-head">
+      <div class="drawer-prod" data-drawer-prod></div>
+      <button type="button" class="btn btn-small" data-drawer-close aria-label="Fechar">✕</button>
+    </div>
+    <div class="drawer-reasons" data-drawer-reasons></div>
+    <div class="drawer-actions"><button type="button" class="btn btn-small" data-drawer-filter>Filtrar o painel por este produto</button></div>
+    <ul class="drawer-orders" data-drawer-orders></ul>
+  </aside>
+</div>
+<script src="/static/dashboard.js?v=10" defer></script>
+{% endblock %}

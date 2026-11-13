@@ -1,0 +1,3 @@
+{% set vencido = ret.action_deadline and ret.action_deadline < now %}
+{% set aceita = (ret.platform_status or '').startswith('ACCEPTED') %}
+{{ ret.platform|platform }} não oferece {% if vencido or aceita %}mais contestação{% else %}motivo de recusa agora{% endif %} para esta devolução{% if vencido %}: o prazo de resposta acabou em {{ ret.action_deadline|dt }}{% if aceita %} e ela já foi aceita{% endif %}{% elif aceita %}: ela já foi aceita{% endif %}.

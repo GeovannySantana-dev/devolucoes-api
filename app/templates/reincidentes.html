@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}Compradores reincidentes{% endblock %}
+{% block page_class %}page-wide{% endblock %}
+{% block content %}
+<div class="dash dash-neon">
+  <a class="back" href="/app/relatorios?inicio={{ p.start.isoformat() }}&fim={{ p.end.isoformat() }}{% if p.platform %}&plataforma={{ p.platform }}{% endif %}{% if p.store_id %}&loja={{ p.store_id }}{% endif %}">← Relatórios</a>
+  <div class="dash-head"><h1>Compradores reincidentes</h1></div>
+  <p class="small muted">Quem pediu {{ repeat_min }} ou mais devoluções de {{ p.label() }}. Só Shopee e Mercado Livre: TikTok e Shein não
+    informam o comprador. Os com item diferente do pedido vêm primeiro.</p>
+
+  {% if buyers_list %}
+  <section class="tiles" aria-label="Resumo">
+    <div class="tile-stat"><span class="stat-label">Compradores</span><strong class="stat-value">{{ buyers_list|length }}</strong>
+      <span class="stat-sub">com {{ repeat_min }}+ devoluções</span></div>
+    {% set mism = buyers_list|selectattr('mismatch')|list|length %}
+    <div class="tile-stat {% if mism %}tile-alert{% endif %}"><span class="stat-label">Com item diferente</span><strong class="stat-value">{{ mism }}</strong>
+      <span class="stat-sub">mandaram outro produto ao menos 1 vez</span></div>
+    <div class="tile-stat"><span class="stat-label">Devoluções</span><strong class="stat-value">{{ buyers_list|sum(attribute='returns', start=[])|length }}</strong>
+      <span class="stat-sub">desses compradores no período</span></div>
+  </section>
+
+  <div class="repeat-list">
+    {% for b in buyers_list %}
+    <section class="panel {% if b.mismatch %}repeat-buyer{% endif %}">
+      <h2 class="kicker">Comprador {{ loop.index }} · {{ b.platform|platform }} · {{ b.returns|length }} devoluções{% if b.mismatch %} · ⚠ {{ b.mismatch }} com item diferente{% endif %}</h2>
+      <ul class="drawer-orders">
+        {% for o in b.returns %}
+        {% set item = o['items'][0] if o['items'] else none %}
+        <li><a class="order-row" href="/app/devolucoes/{{ o.id }}">
+          <span class="order-top"><strong>{{ o.platform|platform }} · <span class="mono">{{ o.external_order_id or '—' }}</span></strong>
+            {% if o.received_at and o.item_condition %}<span class="badge tone-{{ {'resale': 'ok', 'defect': 'bad', 'mismatch': 'warn'}.get(o.item_condition, 'muted') }}">{{ {'resale': 'revenda', 'defect': 'defeito', 'mismatch': 'item diferente'}.get(o.item_condition, o.item_condition) }}</span>
+            {% else %}<span class="badge tone-{{ o.status|status_tone }}">{{ o.status|status_label }}</span>{% endif %}</span>
+          <span class="small muted">{{ o.reason_text or o.reason_code or 'Sem motivo' }}{% if item and item.seller_sku %} · {{ item.seller_sku }}{% endif %} · {{ o.requested_at|dt('%d/%m/%Y') }}{% if o.refund_amount %} · {{ o.refund_amount|money }}{% endif %}</span>
+        </a></li>
+        {% endfor %}
+      </ul>
+    </section>
+    {% endfor %}
+  </div>
+  {% else %}
+  <section class="panel"><p class="muted">Nenhum comprador com {{ repeat_min }} ou mais devoluções nesse período.</p></section>
+  {% endif %}
+</div>
+{% endblock %}

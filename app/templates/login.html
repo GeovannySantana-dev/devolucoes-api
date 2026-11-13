@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block title %}Entrar{% endblock %}
+{% block content %}
+<section class="login">
+  <h1>Devoluções</h1>
+  <p class="muted">Entre com o seu usuário. Cada ação fica registrada com o seu nome.</p>
+  <form method="post" action="/app/login" class="stack">
+    <input type="hidden" name="next" value="{{ next }}">
+    <label>E-mail
+      <input type="email" name="email" value="{{ email or '' }}" autocomplete="username" required autofocus>
+    </label>
+    <label>Senha
+      <input type="password" name="senha" autocomplete="current-password" required>
+    </label>
+    <button class="btn btn-primary btn-block" type="submit">Entrar</button>
+  </form>
+  <p class="login-forgot"><a href="/app/esqueci-senha">Esqueci minha senha</a></p>
+</section>
+{% endblock %}

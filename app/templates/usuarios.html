@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}Usuários{% endblock %}
+{% block content %}
+<a class="back" href="/app">← Voltar</a>
+<section class="panel">
+  <h1>Usuários</h1>
+  <ul class="users">
+    {% for u in users %}
+    <li class="{% if not u.active %}inactive{% endif %}">
+      <div>
+        <strong>{{ u.name }}</strong> <span class="badge tone-muted">{{ roles[u.role] }}</span>
+        <div class="small muted">{{ u.email }} · último acesso {{ u.last_login_at|dt }}</div>
+      </div>
+      <div class="row wrap" style="gap:.4rem">
+        <form method="post" action="/app/usuarios/{{ u.id }}/custo" class="row" style="gap:.3rem" title="Salário + encargos por hora: usado no custo por pacote da produtividade">
+          <input name="custo" inputmode="decimal" placeholder="Custo/hora R$" value="{{ '%.2f'|format(u.hourly_cost)|replace('.', ',') if u.hourly_cost is not none else '' }}" style="max-width:8.5rem" aria-label="Custo por hora de {{ u.name }}">
+          <button class="btn btn-small" type="submit">Salvar</button>
+        </form>
+        {% if u.id != user.id %}
+        <form method="post" action="/app/usuarios/{{ u.id }}/sair-de-todos" data-confirm="Desconectar {{ u.name }} de todos os aparelhos?">
+          <button class="btn btn-small" type="submit" title="Celular perdido ou pessoa saiu da equipe">Sair dos aparelhos</button>
+        </form>
+        <form method="post" action="/app/usuarios/{{ u.id }}/ativo">
+          <button class="btn btn-small" type="submit">{{ 'Desativar' if u.active else 'Reativar' }}</button>
+        </form>
+        {% endif %}
+      </div>
+    </li>
+    {% endfor %}
+  </ul>
+</section>
+
+<section class="panel">
+  <h2>Novo usuário</h2>
+  <form method="post" action="/app/usuarios" class="stack" autocomplete="off">
+    <label>Nome <input name="nome" required></label>
+    <label>E-mail <input type="email" name="email" required></label>
+    <label>Perfil
+      <select name="perfil">
+        <option value="operador">Operador: confere, decide e gera NF</option>
+        <option value="gestor">Gestor: tudo, inclusive usuários</option>
+      </select>
+    </label>
+    <label>Senha inicial (mín. 8 caracteres)
+      <input type="password" name="senha" minlength="8" autocomplete="new-password" required>
+    </label>
+    <button class="btn btn-primary" type="submit">Criar usuário</button>
+  </form>
+  <p class="small muted">Para trocar a senha de alguém: <code>scripts\criar_usuario.py email --senha</code>.</p>
+</section>
+{% endblock %}

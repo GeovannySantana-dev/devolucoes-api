@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+{% block title %}Integrações{% endblock %}
+{% block content %}
+<a class="back" href="/app">← Voltar</a>
+
+{% if new_key %}
+<section class="panel accent">
+  <h2>Chave criada: {{ new_key_name }}</h2>
+  <p>Copie agora e guarde no outro sistema. <strong>Ela não aparece de novo</strong>: se perder, revogue e crie outra.</p>
+  <div class="key-box">
+    <code class="mono" data-key>{{ new_key }}</code>
+    <button class="btn btn-small" type="button" data-copy>Copiar</button>
+  </div>
+</section>
+{% endif %}
+
+<section class="panel">
+  <h1>Integrações (API)</h1>
+  <p class="small muted">Chaves <strong>somente leitura</strong> para outros sistemas consultarem quantidades e custos
+    das devoluções. Elas não aceitam, recusam nem alteram nada. Crie uma chave por sistema, para poder revogar
+    só aquela se precisar.</p>
+  {% if keys %}
+  <ul class="users">
+    {% for k in keys %}
+    <li class="{% if k.revoked_at %}inactive{% endif %}">
+      <div>
+        <strong>{{ k.name }}</strong>
+        {% if k.revoked_at %}<span class="badge tone-muted">Revogada</span>{% else %}<span class="badge tone-ok">Ativa</span>{% endif %}
+        <div class="small muted"><span class="mono">{{ k.prefix }}…</span> · criada {{ k.created_at|dt }}{% if k.created_by %} por {{ k.created_by }}{% endif %}
+          · último uso {{ k.last_used_at|dt if k.last_used_at else 'nunca' }}</div>
+      </div>
+      {% if not k.revoked_at %}
+      <form method="post" action="/app/integracoes/{{ k.id }}/revogar">
+        <button class="btn btn-small btn-bad" type="submit" data-confirm="Revogar a chave {{ k.name }}? O sistema que usa ela para de receber os dados na hora.">Revogar</button>
+      </form>
+      {% endif %}
+    </li>
+    {% endfor %}
+  </ul>
+  {% else %}
+  <p class="muted">Nenhuma chave criada ainda.</p>
+  {% endif %}
+</section>
+
+<section class="panel">
+  <h2>Nova chave</h2>
+  <form method="post" action="/app/integracoes" class="stack" autocomplete="off">
+    <label>Nome do sistema que vai usar <input name="nome" maxlength="80" placeholder="ex.: Sistema financeiro" required></label>
+    <button class="btn btn-primary" type="submit">Criar chave</button>
+  </form>
+</section>
+
+<section class="panel">
+  <h2>Como o outro sistema usa</h2>
+  <p class="small">Mande a chave no cabeçalho <code>X-API-Key</code>. Endereço base: <code class="mono">{{ api_base }}</code></p>
+  <dl class="guide small">
+    <dt><code>GET /painel?inicio=2026-10-01&amp;fim=2026-10-31</code></dt>
+    <dd>Indicadores, evolução, marketplaces, motivos, condição e produtos (o mesmo do painel de Relatórios).</dd>
+    <dt><code>GET /custos?agrupar_por=month</code></dt>
+    <dd>Custos e reembolsos agrupados por <code>month</code>, <code>reason</code>, <code>store</code>, <code>sku</code>, <code>condition</code> ou <code>liability</code>.</dd>
+    <dt><code>GET /devolucoes?atualizado_desde=2026-10-01T00:00:00-03:00</code></dt>
+    <dd>Uma linha por devolução, com itens e custos detalhados, de 100 em 100 (<code>pagina</code>, <code>por_pagina</code> até 500).</dd>
+  </dl>
+  <p class="small muted">Filtros comuns: <code>plataforma</code> (tiktok, shopee, mercado_livre, shein) e <code>loja</code>.
+    Documentação completa em <a href="/docs#/Integração%20(somente%20leitura)">/docs</a>.</p>
+</section>
+<section class="panel" id="lojas">
+  <h2>Lojas conectadas</h2>
+  <p class="small muted">Se uma loja passar 2 horas sem sincronizar, a gestão vê um aviso na fila e recebe um e-mail; quando ela volta, chega outro.</p>
+  <ul class="users stores">
+    {% for st in statuses %}{% set s = st.store %}
+    <li class="store-{{ st.level }}">
+      <div>
+        <span class="ptag ptag-{{ s.platform }}">{{ s.platform|platform }}</span> <strong>{{ s.label }}</strong>
+        <span class="st st-{{ st.level }}">● {{ st.label }}</span>
+        <div class="small muted">
+          {% if s.last_synced_at %}última sincronização {{ s.last_synced_at|dt('%d/%m %H:%M') }}{% else %}ainda não sincronizou{% endif %}
+          {% if st.detail %} · {{ st.detail }}{% endif %}
+          {% if s.display_name %} · nome na plataforma: {{ s.name }}{% endif %}
+        </div>
+        {% if st.level in ('bad', 'warn', 'off') %}
+        <a class="btn btn-small {% if st.level != 'warn' %}btn-primary{% endif %} store-auth" href="/app/lojas/{{ s.id }}/autorizar">{% if st.level == 'warn' %}Renovar{% else %}Autorizar de novo{% endif %}</a>
+        {% endif %}
+      </div>
+      <details class="store-rename">
+        <summary class="small muted">Mudar o nome que aparece no app</summary>
+        <form method="post" action="/app/lojas/{{ s.id }}/nome" class="row store-form">
+          <input name="nome" value="{{ s.display_name or '' }}" placeholder="{{ s.name }}" maxlength="60" aria-label="Nome da loja {{ s.name }}">
+          <button class="btn btn-small" type="submit">Salvar</button>
+        </form>
+      </details>
+    </li>
+    {% endfor %}
+  </ul>
+</section>
+
+{% if backup %}
+<section class="panel" id="copia-fotos">
+  <h2>Cópia das fotos e vídeos</h2>
+  <p class="small muted">A cada 15 minutos o servidor copia as fotos novas para o Supabase, nas mesmas pastas
+    <code>plataforma/número do pedido</code>. Se o PC servidor estragar, as provas das conferências continuam lá.
+    Os vídeos são comprimidos no servidor assim que chegam ({{ 'copiados também' if backup.videos else 'a cópia deles liga com o plano pago do Supabase' }}).</p>
+  {% if not backup.configured %}
+  <p class="flash flash-warn">Cópia desligada: falta a chave do Supabase no servidor (<code>SUPABASE_URL</code> e <code>SUPABASE_SERVICE_KEY</code> no .env).</p>
+  {% endif %}
+  <div class="bk-grid">
+    <div><span>Situação</span><b class="st st-{{ backup.level }}">● {% if backup.level == 'off' %}desligada{% elif backup.level == 'bad' %}espaço acabando{% elif backup.level == 'warn' %}copiando{% else %}em dia{% endif %}</b></div>
+    <div><span>Última cópia</span><b>{{ backup.last|dt('%d/%m %H:%M') if backup.last else '—' }}</b></div>
+    <div><span>Na nuvem</span><b>{{ backup.copied }} de {{ backup.total - backup.waiting }}</b>{% if backup.waiting %}<small class="muted"> + {{ backup.waiting }} vídeo(s) esperando o plano pago</small>{% endif %}</div>
+    <div><span>Espaço usado</span><b>{{ '%.2f'|format(backup.used_bytes / 1073741824)|replace('.', ',') }} GB</b><small class="muted"> de {{ '%.1f'|format(backup.limit_bytes / 1073741824)|replace('.', ',') }} GB</small></div>
+  </div>
+</section>
+{% endif %}
+<script>
+  document.querySelector("[data-copy]")?.addEventListener("click", async (e) => {
+    const text = document.querySelector("[data-key]").textContent.trim();
+    try { await navigator.clipboard.writeText(text); e.target.textContent = "Copiada ✓"; }
+    catch { getSelection().selectAllChildren(document.querySelector("[data-key]")); }
+  });
+</script>
+{% endblock %}

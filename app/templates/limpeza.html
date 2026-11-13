@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}Limpar fila de conferência{% endblock %}
+{% block content %}
+<a class="back" href="/app">← Voltar</a>
+<section class="panel">
+  <h1>Limpar fila de conferência</h1>
+  <p class="small muted">Para começar a usar o sistema sem herdar o que já foi resolvido no processo antigo.
+    As devoluções físicas <strong>ainda não conferidas aqui</strong> e solicitadas <strong>até a data escolhida</strong>
+    saem da fila "Para conferir". Nada é enviado ao marketplace, nenhuma NF é gerada e o estoque não muda.
+    Fica registrado no histórico de cada uma, e dá para devolver qualquer uma à fila pelo detalhe.</p>
+
+  <form method="get" action="/app/limpeza" class="row wrap">
+    <label style="flex:1">Solicitadas até (inclusive)
+      <input type="date" name="ate" value="{{ ate }}" required>
+    </label>
+    <button class="btn" type="submit" style="align-self:flex-end">Ver quantas</button>
+    <label class="check" style="flex-basis:100%">
+      <input type="checkbox" name="fechadas" value="1" {% if only_closed %}checked{% endif %}>
+      Só as já concluídas no marketplace (as que ainda estão a caminho ou aguardando envio continuam na fila)
+    </label>
+  </form>
+</section>
+
+{% if preview is not none %}
+<section class="panel">
+  <h2>Até {{ day.strftime('%d/%m/%Y') }}: {{ total }} devoluções{% if only_closed %} já concluídas{% endif %}</h2>
+  {% if kept %}<p class="small muted">{{ kept }} ainda em andamento continuam na fila para serem conferidas quando chegarem.</p>{% endif %}
+  {% if total %}
+  <table class="data">
+    <thead><tr><th scope="col">Marketplace</th><th scope="col" class="num">Devoluções</th></tr></thead>
+    <tbody>{% for p, n in preview %}<tr><th scope="row">{{ p|platform }}</th><td class="num">{{ n }}</td></tr>{% endfor %}</tbody>
+  </table>
+  <form method="post" action="/app/limpeza" style="margin-top:1rem" data-busy>
+    <input type="hidden" name="ate" value="{{ ate }}">
+    {% if only_closed %}<input type="hidden" name="fechadas" value="1">{% endif %}
+    <button class="btn btn-primary btn-block" type="submit"
+            data-confirm="Marcar {{ total }} devoluções até {{ day.strftime('%d/%m/%Y') }} como tratadas fora do sistema?">
+      Marcar {{ total }} como tratadas fora do sistema</button>
+  </form>
+  {% else %}
+  <p class="muted">Nada a limpar até essa data.</p>
+  {% endif %}
+</section>
+{% endif %}
+{% endblock %}

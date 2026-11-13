@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}Pacote não entregue{% endblock %}
+{% block content %}
+<a class="back" href="/app">← Voltar</a>
+<section class="panel">
+  <h1>Pacote não entregue</h1>
+  <p class="small muted">Para pacotes que voltaram pela transportadora sem chegar ao cliente. Digite ou leia
+    pela câmera o que estiver na etiqueta: a <strong>chave da NF</strong> (código de barras do DANFE),
+    o <strong>nº do pedido do marketplace</strong> ou o <strong>nº do pedido no Olist</strong>.</p>
+  <form method="post" action="/app/nao-entregue" class="stack" data-busy>
+    <div class="search">
+      <input name="codigo" value="{{ codigo or '' }}" required autofocus inputmode="text" autocomplete="off"
+             placeholder="Chave da NF, pedido do marketplace ou do Olist" aria-label="Código da etiqueta" data-scan-target>
+      <button class="btn btn-icon" type="button" data-scan hidden aria-label="Ler código de barras com a câmera">
+        <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path fill="currentColor" d="M3 5a2 2 0 0 1 2-2h3v2H5v3H3V5zm13-2h3a2 2 0 0 1 2 2v3h-2V5h-3V3zM3 16h2v3h3v2H5a2 2 0 0 1-2-2v-3zm16 0h2v3a2 2 0 0 1-2 2h-3v-2h3v-3zM7 7h2v10H7V7zm3 0h1v10h-1V7zm2 0h2v10h-2V7zm3 0h2v10h-2V7z"/></svg>
+      </button>
+    </div>
+    <label>Observações (opcional)
+      <textarea name="observacoes" rows="2" placeholder="Ex.: endereço não encontrado, recusado pelo destinatário">{{ observacoes or '' }}</textarea>
+    </label>
+    <button class="btn btn-primary btn-block" type="submit">Buscar pedido e registrar</button>
+  </form>
+  <p class="small muted">Se o pedido já tiver uma devolução registrada, o sistema abre a existente em vez de criar outra.</p>
+</section>
+
+<dialog class="scanner" data-scanner>
+  <video playsinline muted></video>
+  <p class="small">Aponte para o código de barras da etiqueta ou do DANFE</p>
+  <button class="btn btn-block" type="button" data-scan-close>Cancelar</button>
+</dialog>
+{% endblock %}

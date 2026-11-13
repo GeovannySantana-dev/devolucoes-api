@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+{% block title %}Custos por modelo{% endblock %}
+{% block page_class %}page-wide{% endblock %}
+{% block content %}
+<div class="dash dash-neon">
+  <div class="dash-head">
+    <h1>Custos por modelo</h1>
+    <div class="dash-head-actions">
+      <a class="btn btn-small" href="/app/custos/excel">⬇ Excel</a>
+    </div>
+  </div>
+  <p class="small muted">Custo de cada peça (matéria-prima + fábrica), usado na perda por defeito e item diferente. A devolução acha
+    o modelo pelo começo do SKU, e vale o começo mais longo: VCA-PRETLIS é listrado, o resto de VCA é liso.</p>
+
+  {% set prefixes = models|sum(attribute='prefixes', start=[]) %}
+  <section class="tiles" aria-label="Resumo">
+    <div class="tile-stat"><span class="stat-label">Modelos</span><strong class="stat-value">{{ models|length }}</strong>
+      <span class="stat-sub">{{ prefixes|length }} começos de SKU</span></div>
+    <div class="tile-stat"><span class="stat-label">Peças cobertas</span>
+      <strong class="stat-value">{% if not cov.total %}—{% elif cov.covered == cov.total %}100%{% else %}{{ ('%.2f'|format(cov.covered / cov.total * 100))|replace('.', ',') }}%{% endif %}</strong>
+      <span class="stat-sub">{{ '{:,}'.format(cov.covered).replace(',', '.') }} de {{ '{:,}'.format(cov.total).replace(',', '.') }} devolvidas</span></div>
+    <div class="tile-stat {% if cov.missing %}tile-alert{% endif %}"><span class="stat-label">SKUs sem modelo</span>
+      <strong class="stat-value">{{ cov.missing|length }}</strong>
+      <span class="stat-sub">{% if cov.missing %}usam o custo padrão {{ default_cost|money }}{% else %}todos com modelo{% endif %}</span></div>
+    <div class="tile-stat"><span class="stat-label">Última mudança</span>
+      <strong class="stat-value">{{ last|dt('%d/%m') if last else '—' }}</strong>
+      <span class="stat-sub">{{ last|dt('%d/%m/%Y %H:%M') if last else 'nenhuma ainda' }}</span></div>
+  </section>
+
+  {% if cov.missing %}
+  <section class="panel">
+    <div class="dash-row-title"><h2 class="kicker">SKUs sem modelo</h2><span class="small muted">peças devolvidas que usam o custo padrão</span></div>
+    <div class="table-wrap">
+      <table class="data">
+        <thead><tr><th scope="col">SKU</th><th scope="col">Produto</th><th scope="col" class="num">Peças</th><th scope="col">Ligar a</th></tr></thead>
+        <tbody>
+          {% for s in cov.missing[:50] %}
+          <tr>
+            <td class="mono nowrap">{{ s.sku }}</td>
+            <td>{{ s.name or '—' }}</td>
+            <td class="num">{{ s.pieces }}</td>
+            <td>
+              <form method="post" action="/app/custos/ligar" class="row cost-form">
+                <input type="hidden" name="sku" value="{{ s.sku }}">
+                <select name="codigo" aria-label="Modelo para {{ s.sku }}" required>
+                  <option value="">Escolha o modelo…</option>
+                  {% for m in models %}<option value="{{ m.code }}">{{ m.code }} · {{ m.name }}</option>{% endfor %}
+                </select>
+                <button class="btn btn-small" type="submit">Ligar</button>
+              </form>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% if cov.missing|length > 50 %}<p class="small muted">Mostrando 50 de {{ cov.missing|length }}. A lista completa está no Excel.</p>{% endif %}
+    <p class="small muted">Produto que não é de nenhum modelo da planilha? Crie um modelo novo lá embaixo.</p>
+  </section>
+  {% endif %}
+
+  <section class="panel">
+    <div class="dash-row-title"><h2 class="kicker">Modelos</h2><span class="small muted">o custo novo entra nos cálculos a partir de agora</span></div>
+    <div class="table-wrap">
+      <table class="data">
+        <thead><tr><th scope="col">Código</th><th scope="col">Modelo · começos de SKU</th><th scope="col" class="num">Peças devolvidas</th><th scope="col">Custo da peça</th></tr></thead>
+        <tbody>
+          {% for m in models|sort(attribute='code') %}
+          <tr>
+            <td class="mono nowrap">{{ m.code }}</td>
+            <td>
+              <strong>{{ m.name }}</strong>
+              <div class="chips prefix-chips">
+                {% for p in m.prefixes %}
+                <span class="chip prefix">{{ p }}{% if m.prefixes|length > 1 %}
+                  <form method="post" action="/app/custos/inicio/{{ p }}/remover" class="inline" data-confirm="Tirar o começo {{ p }} do modelo {{ m.code }}?">
+                    <button class="linkish" type="submit" aria-label="Tirar {{ p }}">✕</button></form>{% endif %}</span>
+                {% endfor %}
+                <details class="add-prefix">
+                  <summary class="chip">+ começo de SKU</summary>
+                  <form method="post" action="/app/custos/{{ m.code }}/inicio" class="row cost-form">
+                    <input name="inicio" placeholder="Ex.: VCA-AZULLIS" maxlength="40" aria-label="Novo começo de SKU para {{ m.code }}" required>
+                    <button class="btn btn-small" type="submit">Adicionar</button>
+                  </form>
+                </details>
+              </div>
+            </td>
+            <td class="num">{{ '{:,}'.format(cov.by_model.get(m.code, 0)).replace(',', '.') }}</td>
+            <td>
+              <form method="post" action="/app/custos/{{ m.code }}/custo" class="row cost-form">
+                <span class="small muted">R$</span>
+                <input class="cost-in" name="custo" inputmode="decimal" value="{{ '%.2f'|format(m.cost)|replace('.', ',') }}" aria-label="Custo da peça de {{ m.code }}" required>
+                <button class="btn btn-small" type="submit">Salvar</button>
+              </form>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <details class="new-model">
+      <summary class="btn btn-small">+ Novo modelo</summary>
+      <form method="post" action="/app/custos/novo" class="stack">
+        <label>Código <input name="codigo" placeholder="Ex.: LN05" maxlength="20" required></label>
+        <label>Nome <input name="nome" placeholder="Ex.: Vestido longo lãzinha" maxlength="120" required></label>
+        <label>Começos de SKU (separados por vírgula) <input name="inicios" placeholder="Ex.: VL" required></label>
+        <label>Custo da peça (R$) <input name="custo" inputmode="decimal" placeholder="0,00" required></label>
+        <button class="btn btn-primary" type="submit">Criar modelo</button>
+      </form>
+    </details>
+  </section>
+</div>
+{% endblock %}

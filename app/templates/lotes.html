@@ -1,0 +1,174 @@
+{% extends "base.html" %}
+{% block title %}Lotes SP ↔ MS{% endblock %}
+{% block page_class %}page-wide{% endblock %}
+{% block content %}
+<a class="back" href="/app">← Voltar</a>
+<div class="dash-head"><h1>Lotes de transferência SP ↔ MS</h1></div>
+<p class="small muted">Peças de revenda conferidas, com NF de devolução na matriz, que vão para o estoque da filial no
+  MS (ida), e as que voltam do MS para venda em SP (volta). Defeito e item diferente não entram: ficam no
+  depósito de defeitos da matriz.</p>
+<p class="small"><strong>Importante:</strong> emita as NFs de transferência no Olist <strong>sem lançar estoque</strong>.
+  Quem mexe no estoque é o app, depósito por depósito (o Olist lançaria no depósito de venda).</p>
+
+{% if not filial_ok %}
+<div class="flash flash-bad" role="alert">Falta o token da conta 2 do Olist (OLIST_FILIAL_API_TOKEN) no servidor: sem ele não dá para dar entrada no estoque do MS.</div>
+{% endif %}
+
+<section class="panel">
+  <div class="dash-row-title">
+    <h2 class="kicker">Próximo lote</h2>
+    <span class="small muted">{{ ready|length }} devoluções · {{ rows|sum(attribute='quantity') }} peças</span>
+  </div>
+  {% if waiting %}<p class="small muted">{{ waiting }} conferidas como revenda ainda sem NF de devolução: entram no lote quando a nota sair.</p>{% endif %}
+  {% if rows %}
+  <div class="table-wrap">
+    <table class="data">
+      <thead><tr><th scope="col">SKU</th><th scope="col">Produto</th><th scope="col" class="num">Peças</th><th scope="col" class="num">Valor</th></tr></thead>
+      <tbody>
+        {% for r in rows %}
+        <tr><td class="mono">{{ r.sku }}</td><td>{{ r.name or '' }}{% if r.variant %} <span class="muted small">· {{ r.variant }}</span>{% endif %}</td>
+            <td class="num">{{ r.quantity }}</td><td class="num">{{ r.amount|money }}</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <form method="post" action="/app/lotes/fechar" style="margin-top:.75rem" data-busy>
+    <button class="btn btn-primary btn-block" type="submit"
+            data-confirm="Fechar o lote com {{ rows|sum(attribute='quantity') }} peças? Depois de fechado, emita a NF de transferência no Olist.">
+      Fechar lote com {{ rows|sum(attribute='quantity') }} peças</button>
+  </form>
+  {% else %}
+  <p class="muted">Nenhuma peça esperando lote.</p>
+  {% endif %}
+</section>
+
+<section class="panel">
+  <h2 class="kicker">Lotes fechados</h2>
+  {% if not batches %}<p class="muted">Nenhum lote ainda.</p>{% endif %}
+  <ul class="drawer-orders">
+    {% for b in batches %}
+    <li class="order-row" style="gap:.5rem">
+      <span class="order-top">
+        <strong>Lote {{ b.number }} · {{ b.pieces }} peças · {{ b.amount|money }}</strong>
+        {% if b.status == 'stocked' %}<span class="badge tone-ok">entrada no MS feita</span>
+        {% elif b.status == 'error' %}<span class="badge tone-bad">entrada no MS com erro</span>
+        {% elif b.erp_invoice_number %}<span class="badge tone-info">NF {{ b.erp_invoice_number }} · falta entrada no MS</span>
+        {% else %}<span class="badge tone-warn">falta a NF de transferência</span>{% endif %}
+      </span>
+      <span class="small muted">Fechado em {{ b.closed_at|dt }}{% if b.closed_by %} por {{ b.closed_by }}{% endif %}
+        {% if b.ms_stock_posted_at %} · entrada no MS em {{ b.ms_stock_posted_at|dt }}{% endif %}</span>
+      {% if b.last_error %}<span class="small bad-text">{{ b.last_error }}</span>{% endif %}
+      <div class="row wrap" style="gap:.5rem">
+        <a class="btn btn-small" href="/app/lotes/{{ b.id }}/excel">⬇ Lista do lote (Excel)</a>
+        {% if b.status != 'stocked' %}
+        <form method="post" action="/app/lotes/{{ b.id }}/nf" class="row" style="gap:.4rem">
+          <input name="numero" inputmode="numeric" placeholder="Nº da NF de transferência" value="{{ b.erp_invoice_number or '' }}" required style="max-width:14rem" aria-label="Número da NF de transferência do lote {{ b.number }}">
+          <button class="btn btn-small" type="submit">Salvar NF</button>
+        </form>
+        {% if b.erp_invoice_number %}
+        <form method="post" action="/app/lotes/{{ b.id }}/estoque-ms" data-busy>
+          <button class="btn btn-small btn-primary" type="submit" data-confirm="Tirar as {{ b.pieces }} peças do lote {{ b.number }} do depósito de devoluções de SP e dar entrada no estoque do MS (conta 2)?">Dar entrada no MS</button>
+        </form>
+        {% endif %}
+        {% endif %}
+      </div>
+    </li>
+    {% endfor %}
+  </ul>
+</section>
+
+<section class="panel" id="volta">
+  <div class="dash-row-title">
+    <h2 class="kicker">Volta MS → SP (peças que voltam para venda)</h2>
+    <span class="small muted">{{ in_ms_rows|sum(attribute='quantity') }} peças de devolução no MS</span>
+  </div>
+  <p class="small muted">Nota própria, separada da nota da produção: o app de bipagem da produção não mexe no estoque do
+    Olist. Bipe aqui só as peças de devolução.</p>
+  {% if back %}
+  <form method="post" action="/app/lotes/volta/{{ back.id }}/bipar" class="row" style="gap:.5rem" data-busy>
+    <input name="codigo" autofocus autocomplete="off" placeholder="Bipe o código de barras ou digite o SKU"
+           aria-label="Código da peça" style="flex:1">
+    <button class="btn btn-primary" type="submit">Bipar</button>
+  </form>
+  <p class="small muted" style="margin-top:.5rem">Lote {{ back.number }} · {{ back.pieces }} peças · {{ back.amount|money }}</p>
+  {% if back_rows %}
+  <div class="table-wrap">
+    <table class="data">
+      <thead><tr><th scope="col">SKU</th><th scope="col">Produto</th><th scope="col" class="num">Peças</th><th scope="col">Pedidos</th></tr></thead>
+      <tbody>
+        {% for r in back_rows %}
+        <tr><td class="mono">{{ r.sku }}</td><td>{{ r.name or '' }}{% if r.variant %} <span class="muted small">· {{ r.variant }}</span>{% endif %}</td>
+            <td class="num">{{ r.quantity }}</td><td class="small">{{ r.orders|join(', ') }}</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <details style="margin-top:.5rem"><summary class="small">Tirar uma peça bipada por engano</summary>
+    <ul class="drawer-orders">
+      {% for ret in back.back_returns %}
+      <li class="order-row row" style="gap:.5rem">
+        <span class="small">{{ ret.items|map(attribute='seller_sku')|join(', ') }} · pedido {{ ret.external_order_id }}</span>
+        <form method="post" action="/app/lotes/volta/{{ back.id }}/remover">
+          <input type="hidden" name="devolucao" value="{{ ret.id }}">
+          <button class="btn btn-small" type="submit">Tirar</button>
+        </form>
+      </li>
+      {% endfor %}
+    </ul>
+  </details>
+  <form method="post" action="/app/lotes/volta/{{ back.id }}/fechar" style="margin-top:.75rem" data-busy>
+    <button class="btn btn-primary btn-block" type="submit"
+            data-confirm="Fechar o lote de volta com {{ back.pieces }} peças? Depois emita a NF de transferência na conta 2 do Olist, sem lançar estoque.">
+      Fechar lote de volta com {{ back.pieces }} peças</button>
+  </form>
+  {% endif %}
+  {% else %}
+  <form method="post" action="/app/lotes/volta/abrir">
+    <button class="btn btn-primary btn-block" type="submit" {% if not in_ms_rows %}disabled{% endif %}>Começar a bipar um lote de volta</button>
+  </form>
+  {% if not in_ms_rows %}<p class="small muted">Nenhuma peça de devolução no MS: elas aparecem aqui depois da entrada no MS de um lote de ida.</p>{% endif %}
+  {% endif %}
+
+  {% if back_batches %}
+  <h3 class="kicker" style="margin-top:1rem">Lotes de volta fechados</h3>
+  <ul class="drawer-orders">
+    {% for b in back_batches %}
+    <li class="order-row" style="gap:.5rem">
+      <span class="order-top">
+        <strong>Lote {{ b.number }} · {{ b.pieces }} peças · {{ b.amount|money }}</strong>
+        {% if b.status == 'stocked' %}<span class="badge tone-ok">de volta à venda em SP</span>
+        {% elif b.status == 'shipped' %}<span class="badge tone-info">saiu do MS · falta entrada em SP</span>
+        {% elif b.status == 'error' %}<span class="badge tone-bad">com erro</span>
+        {% elif b.erp_invoice_number %}<span class="badge tone-info">NF {{ b.erp_invoice_number }} · falta baixar no MS</span>
+        {% else %}<span class="badge tone-warn">falta a NF de transferência</span>{% endif %}
+      </span>
+      <span class="small muted">Fechado em {{ b.closed_at|dt }}{% if b.closed_by %} por {{ b.closed_by }}{% endif %}
+        {% if b.ms_stock_posted_at %} · saiu do MS em {{ b.ms_stock_posted_at|dt }}{% endif %}
+        {% if b.sp_stock_posted_at %} · entrada em SP em {{ b.sp_stock_posted_at|dt }}{% endif %}</span>
+      {% if b.last_error %}<span class="small bad-text">{{ b.last_error }}</span>{% endif %}
+      <div class="row wrap" style="gap:.5rem">
+        <a class="btn btn-small" href="/app/lotes/{{ b.id }}/excel">⬇ Lista do lote (Excel)</a>
+        {% if b.status != 'stocked' %}
+        {% if not b.ms_stock_posted_at %}
+        <form method="post" action="/app/lotes/volta/{{ b.id }}/nf" class="row" style="gap:.4rem">
+          <input name="numero" inputmode="numeric" placeholder="Nº da NF de transferência (conta 2)" value="{{ b.erp_invoice_number or '' }}" required style="max-width:16rem" aria-label="Número da NF do lote de volta {{ b.number }}">
+          <button class="btn btn-small" type="submit">Salvar NF</button>
+        </form>
+        {% if b.erp_invoice_number %}
+        <form method="post" action="/app/lotes/volta/{{ b.id }}/baixar-ms" data-busy>
+          <button class="btn btn-small btn-primary" type="submit" data-confirm="Tirar as {{ b.pieces }} peças do lote {{ b.number }} do estoque do MS (conta 2)? Faça isso quando as peças saírem do MS.">Baixar no MS</button>
+        </form>
+        {% endif %}
+        {% else %}
+        <form method="post" action="/app/lotes/volta/{{ b.id }}/entrada-sp" data-busy>
+          <button class="btn btn-small btn-primary" type="submit" data-confirm="As {{ b.pieces }} peças do lote {{ b.number }} chegaram em SP? Elas entram no depósito de venda e voltam a aparecer nas plataformas.">Entrada em SP</button>
+        </form>
+        {% endif %}
+        {% endif %}
+      </div>
+    </li>
+    {% endfor %}
+  </ul>
+  {% endif %}
+</section>
+{% endblock %}

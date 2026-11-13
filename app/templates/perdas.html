@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+{% block title %}Perdas do mês{% endblock %}
+{% block page_class %}page-wide{% endblock %}
+{% block content %}
+<div class="dash dash-neon">
+  <div class="dash-head">
+    <h1>Perdas · {{ month_label }}</h1>
+    <div class="dash-head-actions">
+      <a class="btn btn-small" href="/app/perdas?mes={{ prev }}{% if modelo == '6m' %}&modelo=6m{% endif %}">‹ mês anterior</a>
+      {% if next %}<a class="btn btn-small" href="/app/perdas?mes={{ next }}{% if modelo == '6m' %}&modelo=6m{% endif %}">próximo mês ›</a>{% endif %}
+      <a class="btn btn-small" href="/app/perdas/excel?mes={{ mes }}">⬇ Excel</a>
+    </div>
+  </div>
+  <p class="small muted">Peças conferidas como <strong>defeito</strong>, que são descartadas. Viram perda no IRPJ/CSLL com a
+    NF de baixa de estoque por perda (CFOP 5.927). O Excel traz as peças somadas por SKU para a nota e, em outra aba, cada
+    peça com motivo, fotos e o link da devolução, que é a prova.</p>
+
+  <section class="tiles" aria-label="Resumo do mês">
+    <div class="tile-stat"><span class="stat-label">Peças</span><strong class="stat-value">{{ s.pieces }}</strong>
+      <span class="stat-sub">em {{ s.returns }} devoluções</span></div>
+    <div class="tile-stat"><span class="stat-label">Custo estimado</span><strong class="stat-value">{{ s.cost|money }}</strong>
+      <span class="stat-sub">custo de cada modelo (planilha de custo)</span></div>
+    <div class="tile-stat {% if s.returns and s.with_photo < s.returns %}tile-alert{% endif %}"><span class="stat-label">Com foto</span>
+      <strong class="stat-value">{{ s.with_photo }}/{{ s.returns }}</strong>
+      <span class="stat-sub">{% if s.returns and s.with_photo < s.returns %}{{ s.returns - s.with_photo }} sem prova{% else %}todas com prova{% endif %}</span></div>
+    <div class="tile-stat {% if s.without_reason %}tile-alert{% endif %}"><span class="stat-label">Maior motivo</span>
+      <strong class="stat-value stat-text">{{ s.top_reason|defect_reason if s.top_reason else '—' }}</strong>
+      <span class="stat-sub">{% if s.without_reason %}{{ s.without_reason }} sem motivo (conferidas antes){% else %}todas com motivo{% endif %}</span></div>
+  </section>
+
+  {% if s.by_reason and s.returns %}
+  <div class="chips" aria-label="Devoluções por motivo">
+    {% for key, n in s.by_reason %}<span class="chip">{{ key|defect_reason }} · {{ n }}</span>{% endfor %}
+  </div>
+  {% endif %}
+
+  <section class="panel" id="por-modelo">
+    <div class="dash-row-title">
+      <h2 class="kicker">Perda por modelo</h2>
+      <div class="seg seg-small" role="group" aria-label="Período da perda por modelo">
+        <a class="seg-btn {% if modelo == 'mes' %}active{% endif %}" href="/app/perdas?mes={{ mes }}#por-modelo">Este mês</a>
+        <a class="seg-btn {% if modelo == '6m' %}active{% endif %}" href="/app/perdas?mes={{ mes }}&modelo=6m#por-modelo">Últimos 6 meses</a>
+      </div>
+    </div>
+    <p class="small muted">Defeito e item diferente em R$ (custo do modelo × peças), do maior para o menor: onde a fábrica pode agir primeiro.</p>
+    {% if models %}
+    {% set top = models[0].cost or 1 %}
+    <div class="bars model-bars">
+      {% for m in models %}
+      <div class="hrow model-row" title="{{ m.code }} · {{ m.name }}: {{ m.lost }} peça(s), {{ m.cost|money }}">
+        <span class="hrow-name"><strong>{{ m.code }}</strong> · {{ m.name }}</span>
+        <span class="hbar-track"><span class="hbar-fill" style="width:{{ '%.1f'|format(m.cost / top * 100) }}%"></span></span>
+        <span class="hrow-val"><strong>{{ m.cost|money }}</strong><span class="muted">{{ m.lost }} pç · {% for r, n in m.reasons[:2] %}{{ r|lower }}{% if n > 1 %} {{ n }}{% endif %}{% if not loop.last %}, {% endif %}{% endfor %}</span></span>
+      </div>
+      {% endfor %}
+    </div>
+    <div class="table-wrap">
+      <table class="data">
+        <thead><tr><th scope="col">Modelo</th><th scope="col" class="num">Peças conferidas</th><th scope="col" class="num">Com perda</th>
+          <th scope="col" class="num">Taxa</th><th scope="col" class="num">Perda</th></tr></thead>
+        <tbody>
+          {% for m in models %}
+          <tr>
+            <td>{{ m.code }} · {{ m.name }}</td>
+            <td class="num">{{ m.inspected }}</td>
+            <td class="num">{{ m.lost }}</td>
+            <td class="num {% if m.rate and m.rate >= 0.02 %}bad-text{% endif %}">{{ ('%.1f'|format(m.rate * 100))|replace('.', ',') ~ '%' if m.rate is not none else '—' }}</td>
+            <td class="num">{{ m.cost|money }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <p class="muted">Nenhuma peça com defeito ou item diferente {% if modelo == '6m' %}nos últimos 6 meses{% else %}em {{ month_label }}{% endif %}.</p>
+    {% endif %}
+  </section>
+
+  <section class="panel">
+    <div class="dash-row-title"><h2 class="kicker">Peças do mês</h2><span class="small muted">toque no SKU para ver fotos e histórico</span></div>
+    {% if rows %}
+    <div class="table-wrap">
+      <table class="data">
+        <thead><tr>
+          <th scope="col">Conferida</th><th scope="col">SKU</th><th scope="col" class="num">Peças</th><th scope="col">Motivo</th>
+          <th scope="col">Marketplace · pedido</th><th scope="col" class="num">Fotos</th><th scope="col">NF devolução</th><th scope="col" class="num">Custo</th>
+        </tr></thead>
+        <tbody>
+          {% for r in rows %}
+          <tr>
+            <td class="nowrap">{{ r.ret.received_at|dt('%d/%m %H:%M') }}</td>
+            <td class="mono nowrap"><a href="/app/devolucoes/{{ r.ret.id }}">{{ r['items']|map(attribute='sku')|select|join(', ') or '—' }}</a></td>
+            <td class="num">{{ r.pieces }}</td>
+            <td>{% if r.reason %}{{ r.reason|defect_reason }}{% else %}<span class="badge tone-warn">sem motivo</span>{% endif %}
+              {% if r.notes %}<div class="small muted">{{ r.notes[:80] }}</div>{% endif %}</td>
+            <td>{{ r.ret.platform|platform }} · {{ r.ret.external_order_id or '—' }}</td>
+            <td class="num">{% if r.photos %}{{ r.photos }}{% else %}<span class="badge tone-bad">sem foto</span>{% endif %}</td>
+            <td>{{ r.ret.erp_return_invoice_number or '—' }}</td>
+            <td class="num">{{ r.cost|money }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <p class="muted">Nenhuma peça com defeito conferida em {{ month_label }}.</p>
+    {% endif %}
+  </section>
+</div>
+{% endblock %}

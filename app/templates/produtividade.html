@@ -1,0 +1,134 @@
+{% extends "base.html" %}
+{% block title %}Produtividade{% endblock %}
+{% block page_class %}page-wide{% endblock %}
+{% block content %}
+<div class="dash dash-neon">
+  <div class="dash-head">
+    <h1>Produtividade da bancada</h1>
+    <div class="dash-head-actions">
+      <span class="live-pill" data-live-status><i class="live-dot"></i><span>atualiza sozinha a cada 30 s</span></span>
+      <a class="btn btn-small" href="/app/produtividade/excel?periodo={{ periodo }}&data={{ data }}">⬇ Excel</a>
+    </div>
+  </div>
+
+  <section class="dash-filters" aria-label="Período">
+    <div class="seg" role="group" aria-label="Período rápido">
+      {% for key, label in periods.items() %}
+      <a class="seg-btn {% if periodo == key %}active{% endif %}" href="/app/produtividade?periodo={{ key }}{% if usuario %}&usuario={{ usuario }}{% endif %}">{{ label }}</a>
+      {% endfor %}
+    </div>
+    <form method="get" action="/app/produtividade" class="dash-row">
+      <label class="field">Dia <input type="date" name="data" value="{{ data or (d.start.isoformat() if d.single_day else '') }}" onchange="this.form.submit()"></label>
+      <label class="field">Pessoa
+        <select name="usuario" onchange="this.form.submit()">
+          <option value="">Todos</option>
+          {% for p in d.people if p.user_id %}<option value="{{ p.user_id }}" {% if usuario == p.user_id %}selected{% endif %}>{{ p.name }}</option>{% endfor %}
+        </select>
+      </label>
+      {% if not data %}<input type="hidden" name="periodo" value="{{ periodo }}">{% endif %}
+    </form>
+  </section>
+
+  <div data-live-region>
+  <p class="small muted">{% if d.single_day %}{{ d.start.strftime('%d/%m/%Y') }}{% else %}{{ d.start.strftime('%d/%m') }} a {{ d.end.strftime('%d/%m/%Y') }}{% endif %}
+    {% if d.first %} · da primeira conferência às {{ d.first|dt('%H:%M') }} à última às {{ d.last|dt('%H:%M') }}{% endif %}</p>
+
+  <section class="tiles tiles-5 prod-kpis" aria-label="Indicadores">
+    <div class="tile-stat"><span class="stat-label">Conferências</span><strong class="stat-value">{{ d.total }}</strong>
+      <span class="delta">{% for k, v in d.conditions.items() %}{{ v }} {{ {'resale': 'revenda', 'defect': 'defeito', 'mismatch': 'item dif.'}.get(k, 'sem condição') }}{% if not loop.last %} · {% endif %}{% endfor %}</span></div>
+    <div class="tile-stat"><span class="stat-label">Tempo por pedido</span><strong class="stat-value">{{ d.median_seconds|seconds }}</strong>
+      <span class="delta">mediana · média {{ d.mean_seconds|seconds }}</span></div>
+    <div class="tile-stat"><span class="stat-label">Ritmo</span><strong class="stat-value">{{ (('%.1f'|format(d.per_hour_rate))|replace('.', ',') ~ '/h') if d.per_hour_rate else '—' }}</strong>
+      <span class="delta">pacotes por hora de turno (ou de atividade, sem ponto)</span></div>
+    <div class="tile-stat"><span class="stat-label">Maior parada</span><strong class="stat-value">{{ d.longest_stop.seconds|hours if d.longest_stop else '—' }}</strong>
+      <span class="delta">{% if d.longest_stop %}{{ d.longest_stop.start|dt('%H:%M') }} a {{ d.longest_stop.end|dt('%H:%M') }}{% else %}sem paradas de mais de 10 min{% endif %}</span></div>
+  </section>
+
+  <div class="dash-main">
+    <section class="panel dash-chart">
+      <h2 class="kicker">Conferências por hora</h2>
+      {% set maxh = (d.hours|map(attribute='total')|max) if d.hours else 0 %}
+      {% if maxh %}
+      {% set n = d.hours|length %}{% set bw = 560 / n %}
+      <svg viewBox="0 0 600 190" class="line-chart" role="img" aria-label="Conferências por hora">
+        <defs><linearGradient id="hbar" x1="0" y1="0" x2="0" y2="1"><stop offset="0" class="area-top" style="stop-opacity:1"/><stop offset="1" class="area-bottom" style="stop-opacity:.35"/></linearGradient></defs>
+        <line x1="30" x2="600" y1="160" y2="160" class="grid"/>
+        {% for h in d.hours %}
+        {% set bh = (h.total / maxh * 135) if maxh else 0 %}
+        {% set x = 34 + loop.index0 * bw %}
+        <rect x="{{ x + bw * 0.15 }}" y="{{ 160 - bh }}" width="{{ bw * 0.7 }}" height="{{ bh }}" rx="4" fill="url(#hbar)"><title>{{ h.hour }}h: {{ h.total }} conferências</title></rect>
+        {% if h.total %}<text x="{{ x + bw / 2 }}" y="{{ 154 - bh }}" text-anchor="middle" class="donut-text" style="font-size:11px">{{ h.total }}</text>{% endif %}
+        <text x="{{ x + bw / 2 }}" y="178" text-anchor="middle" class="axis">{{ h.hour }}h</text>
+        {% endfor %}
+      </svg>
+      {% else %}<p class="muted">Nenhuma conferência no período.</p>{% endif %}
+    </section>
+    <section class="panel dash-donut">
+      <h2 class="kicker">Mais demoradas</h2>
+      {% if d.slowest %}
+      <ul class="drawer-orders">
+        {% for s in d.slowest %}
+        <li><a class="order-row" href="/app/devolucoes/{{ s.id }}">
+          <span class="order-top"><strong>{{ s.seconds|seconds }}</strong><span class="small muted">{{ s.at|dt('%d/%m %H:%M') }}</span></span>
+          <span class="small muted">{{ s.who.split(' <')[0] }} · {{ s.platform|platform }} · {{ s.condition|condition }}</span>
+        </a></li>
+        {% endfor %}
+      </ul>
+      {% else %}<p class="muted small">Sem tempos medidos no período.</p>{% endif %}
+    </section>
+  </div>
+
+  <section class="panel">
+    <div class="dash-row-title"><h2 class="kicker">Por funcionário · horas, ritmo e custo</h2>
+      <span class="small muted">custo por pacote = custo da hora (em Usuários) × horas em turno ÷ pacotes</span></div>
+    {% if d.people %}
+    <div class="table-wrap">
+      <table class="data">
+        <thead><tr>
+          <th scope="col">Quem</th><th scope="col" class="num">Pacotes</th><th scope="col" class="num">Tempo/pedido</th>
+          <th scope="col" class="num">Em turno</th><th scope="col" class="num">Pausas</th><th scope="col" class="num">Ativo</th>
+          <th scope="col" class="num">Aproveitamento</th><th scope="col" class="num">Pacotes/h</th><th scope="col" class="num">Custo/pacote</th>
+          <th scope="col">Primeira · última</th>
+        </tr></thead>
+        <tbody>
+          {% for p in d.people %}
+          <tr>
+            <td><a href="/app/produtividade?{% if data %}data={{ data }}{% else %}periodo={{ periodo }}{% endif %}&usuario={{ p.user_id or '' }}">{{ p.name.split(' <')[0] }}</a>
+              {% if p.on_shift == 'working' %}<span class="badge tone-ok">em turno</span>{% elif p.on_shift == 'paused' %}<span class="badge tone-warn">pausa</span>{% endif %}</td>
+            <td class="num">{{ p.inspections }}</td>
+            <td class="num">{{ p.median_seconds|seconds }}</td>
+            <td class="num">{{ p.shift_seconds|hours }}</td>
+            <td class="num">{{ p.pause_seconds|hours }}</td>
+            <td class="num">{{ p.active_seconds|hours }}</td>
+            <td class="num">{% if p.utilization is not none %}<span class="badge tone-{{ 'ok' if p.utilization >= 0.75 else ('warn' if p.utilization >= 0.55 else 'bad') }}">{{ p.utilization|pct }}</span>{% else %}<span class="muted small">sem ponto</span>{% endif %}</td>
+            <td class="num">{{ ('%.1f'|format(p.per_hour))|replace('.', ',') if p.per_hour else '—' }}</td>
+            <td class="num">{% if p.cost_per_package is not none %}{{ p.cost_per_package|money }}{% elif not p.hourly_cost %}<a class="small" href="/app/usuarios">informar custo/hora</a>{% else %}—{% endif %}</td>
+            <td>{{ p.first|dt('%H:%M') }} · {{ p.last|dt('%H:%M') }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    <p class="small muted">Ativo = bipando, abrindo ou conferindo (até 10 min entre uma ação e outra). Aproveitamento = ativo ÷ tempo em turno.
+      Para separar por pessoa, cada funcionário precisa entrar com o próprio usuário.</p>
+    {% else %}<p class="muted">Nenhuma conferência no período.</p>{% endif %}
+  </section>
+
+  {% if d.timeline and d.timeline.lanes %}
+  <section class="panel">
+    <div class="dash-row-title"><h2 class="kicker">Linha do tempo do dia</h2><span class="small muted">cada traço é uma conferência · tracejado = parada de mais de 20 min</span></div>
+    <div class="tl">
+      <div class="tl-hours"><span></span><div>{% for h in d.timeline.hours %}<span>{{ h }}h</span>{% endfor %}</div></div>
+      {% for lane in d.timeline.lanes %}
+      <div class="tl-lane"><span class="tl-name">{{ lane.name.split(' <')[0] }} · {{ lane.count }}</span>
+        <div class="tl-track">
+          {% for s in lane.stops %}<b style="left:{{ s.left }}%;width:{{ s.width }}%" title="Parada de {{ s.minutes }} min"></b>{% endfor %}
+          {% for m in lane.marks %}<i style="left:{{ m }}%"></i>{% endfor %}
+        </div></div>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+  </div>
+</div>
+{% endblock %}

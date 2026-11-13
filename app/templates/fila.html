@@ -1,0 +1,134 @@
+{% extends "base.html" %}
+{% block title %}{{ tabs[aba] }}{% endblock %}
+{% block topbar_extra %}
+{% if shift %}
+{% set mins = (shift.worked_seconds // 60) %}
+{% if not shift.state %}
+<form method="post" action="/app/ponto" class="shift-form">
+  <button class="shift-pill shift-start" name="acao" value="shift_start">▶ Iniciar turno</button>
+</form>
+{% else %}
+<details class="shift">
+  <summary class="shift-pill shift-{{ shift.state }}" aria-label="Turno">
+    {% if shift.state == 'working' %}<i class="live-dot"></i>Em turno · {{ mins // 60 }}h{{ '%02d'|format(mins % 60) }}
+    {% else %}<i class="punch-dot"></i>Em pausa{% endif %}
+  </summary>
+  <form method="post" action="/app/ponto" class="menu-links">
+    <span class="small muted shift-since">{% if shift.state == 'working' %}Em turno desde {{ shift.since|dt('%H:%M') }}{% else %}Em pausa desde {{ shift.last_change|dt('%H:%M') }}{% endif %}</span>
+    {% if shift.state == 'working' %}<button class="linkish" name="acao" value="pause">⏸ Pausa</button>
+    {% else %}<button class="linkish" name="acao" value="resume">▶ Voltar ao trabalho</button>{% endif %}
+    <button class="linkish" name="acao" value="shift_end" data-confirm="Encerrar o turno de hoje?">■ Encerrar o turno</button>
+  </form>
+</details>
+{% endif %}
+{% endif %}
+{% endblock %}
+
+{% block content %}
+{% for st in store_alerts %}
+<a class="alert-line" href="/app/integracoes#lojas" role="alert">
+  <span aria-hidden="true">⛔</span> {{ st.store.platform|platform }}{% if st.store.label != (st.store.platform|platform) %} · {{ st.store.label }}{% endif %} {{ st.label }}
+  <b>Resolver ›</b>
+</a>
+{% endfor %}
+
+<form method="get" action="/app" class="scan-bar" role="search">
+  <input type="hidden" name="aba" value="{{ aba }}">
+  <input type="search" name="q" value="{{ q }}" placeholder="Bipe o rastreio, pedido, SKU ou nota"
+         aria-label="Buscar devolução" enterkeyhint="search" data-scan-target>
+  <button class="scan-cam" type="button" data-scan hidden aria-label="Ler código de rastreio com a câmera">
+    <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path fill="currentColor" d="M3 5a2 2 0 0 1 2-2h3v2H5v3H3V5zm13-2h3a2 2 0 0 1 2 2v3h-2V5h-3V3zM3 16h2v3h3v2H5a2 2 0 0 1-2-2v-3zm16 0h2v3a2 2 0 0 1-2 2h-3v-2h3v-3zM7 7h2v10H7V7zm3 0h1v10h-1V7zm2 0h2v10h-2V7zm3 0h2v10h-2V7z"/></svg>
+  </button>
+</form>
+
+<div data-live-region>
+{% if not q %}
+{% set more = ('vencidas', 'erros', 'todas') %}
+<nav class="qseg" aria-label="Filas">
+  {% for key, short in (('decidir', 'Decidir'), ('conferir', 'Conferir')) %}
+  <a href="/app?aba={{ key }}{% if plataforma %}&plataforma={{ plataforma }}{% endif %}" class="{% if key == aba %}on{% endif %}"
+     title="{{ tabs[key] }}" {% if key == aba %}aria-current="page"{% endif %}>{{ short }} <small>{{ counts[key] }}</small></a>
+  {% endfor %}
+  <details class="seg-more">
+    <summary class="{% if aba in more %}on{% elif counts.vencidas %}alert{% endif %}">{% if aba in more %}{{ tabs[aba] }}{% else %}Mais{% endif %} ▾</summary>
+    <div class="menu-links">
+      {% for key in more %}
+      <a href="/app?aba={{ key }}{% if plataforma %}&plataforma={{ plataforma }}{% endif %}">{{ tabs[key] }}{% if key in counts %} <span class="count">{{ counts[key] }}</span>{% endif %}</a>
+      {% endfor %}
+    </div>
+  </details>
+</nav>
+{% else %}
+<p class="muted">Resultado da busca por <strong>{{ q }}</strong> · <a href="/app?aba={{ aba }}">limpar</a></p>
+{% endif %}
+
+<div class="chips chips-row" aria-label="Filtrar por marketplace">
+  <a class="chip {% if not plataforma %}active{% endif %}" href="/app?aba={{ aba }}{% if q %}&q={{ q|urlencode }}{% endif %}">Todos</a>
+  {% for key, label in platforms.items() %}
+  <a class="chip {% if plataforma == key %}active{% endif %}" href="/app?aba={{ aba }}&plataforma={{ key }}{% if q %}&q={{ q|urlencode }}{% endif %}">{{ label }}</a>
+  {% endfor %}
+</div>
+
+
+{% if hint %}<p class="flash flash-ok" role="status">{{ hint }}</p>{% endif %}
+{% if not rows and q %}
+<div class="panel search-help">
+  <p><strong>Não achei "{{ q }}".</strong> Etiqueta rasurada ou ilegível? Tente:</p>
+  <ul class="small">
+    <li><strong>Só a parte que dá para ler</strong> do código (5 caracteres ou mais), por exemplo os últimos números.</li>
+    <li><strong>A etiqueta da peça</strong>: bipe ou digite o SKU (ex.: VCA-AZCLARO-GG). Aparecem primeiro as devoluções dessa peça que ainda faltam conferir.</li>
+    <li><strong>A nota fiscal que veio no pacote</strong>: bipe o código de barras do DANFE (chave de 44 números).</li>
+    <li><strong>O nº do pedido</strong> do marketplace, se aparecer em algum papel dentro do pacote.</li>
+  </ul>
+</div>
+{% elif not rows %}
+<p class="empty">Nada por aqui.</p>
+{% endif %}
+
+<ul class="qlist">
+  {% for r in rows %}
+  {% set open = r.status in ('pending_review', 'in_transit', 'received') %}
+  {% set late = r.action_deadline and r.action_deadline < now and open %}
+  {% set soon = r.action_deadline and open and not late and (r.action_deadline - now).total_seconds() < 86400 %}
+  {% set item = r.items[0] if r.items else None %}
+  <li>
+    <a class="qc qc-{{ r.platform }}" href="/app/devolucoes/{{ r.id }}">
+      {% if item and item.image_url %}<img class="qc-thumb" src="{{ item.image_url }}" alt="" loading="lazy">{% else %}<span class="qc-thumb"></span>{% endif %}
+      <span class="qc-main">
+        <strong class="qc-title">{{ item.product_name if item and item.product_name else 'Pedido ' ~ (r.external_order_id or '—') }}</strong>
+        <span class="qc-sub">{% if item and item.seller_sku %}{{ item.seller_sku }} · {% endif %}{{ r.reason_text or 'Sem motivo' }}</span>
+        <span class="qc-meta">
+          <span class="ptag ptag-{{ r.platform }}">{{ r.platform|platform }}</span>
+          {% if r.logistics_status and not r.received_at %}
+          <span class="qc-status tone-{{ r.logistics_status|logistics_tone }}">{{ r.logistics_status|logistics }}</span>
+          {% else %}
+          <span class="qc-status tone-{{ r.status|status_tone }}">{{ r.status|status_label }}</span>
+          {% endif %}
+          {% if r.action_deadline and open %}
+          <span class="due {% if late %}due-late{% elif soon %}due-soon{% endif %}">⏱ {% if late %}venceu {% endif %}{{ r.action_deadline|due }}</span>
+          {% endif %}
+        </span>
+        {% set hist = buyer_hist.get(r.buyer_key) if buyer_hist and r.buyer_key else none %}
+        {% if hist and hist.total >= 2 %}<span class="card-repeat small">⚠ Comprador com {{ hist.total }} devoluções{% if hist.mismatch %} · {{ hist.mismatch }} com item diferente{% endif %}</span>{% endif %}
+        {% if r.erp_last_error %}<span class="card-err small">Olist: {{ r.erp_last_error }}</span>{% endif %}
+      </span>
+    </a>
+  </li>
+  {% endfor %}
+</ul>
+
+{% if total > page_size %}
+<nav class="pager">
+  {% if pagina > 1 %}<a class="btn" href="/app?aba={{ aba }}&pagina={{ pagina - 1 }}{% if q %}&q={{ q|urlencode }}{% endif %}{% if plataforma %}&plataforma={{ plataforma }}{% endif %}">Anterior</a>{% endif %}
+  <span class="muted small">Página {{ pagina }} de {{ ((total - 1) // page_size) + 1 }} · {{ total }} devoluções</span>
+  {% if pagina * page_size < total %}<a class="btn" href="/app?aba={{ aba }}&pagina={{ pagina + 1 }}{% if q %}&q={{ q|urlencode }}{% endif %}{% if plataforma %}&plataforma={{ plataforma }}{% endif %}">Próxima</a>{% endif %}
+</nav>
+{% endif %}
+</div>
+
+<dialog class="scanner" data-scanner>
+  <video playsinline muted></video>
+  <p class="small">Aponte para o código de barras da etiqueta</p>
+  <button class="btn btn-block" type="button" data-scan-close>Cancelar</button>
+</dialog>
+{% endblock %}

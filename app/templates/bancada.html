@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}Bancada{% endblock %}
+{% block page_class %}page-wide{% endblock %}
+{% block content %}
+{# Deixe esta tela aberta num tablet/monitor dentro do enquadramento da câmera. Atualiza sozinha. #}
+<meta http-equiv="refresh" content="3">
+<section class="bench" aria-live="polite">
+  <div class="bench-clock" data-clock>{{ now|dt('%d/%m/%Y %H:%M:%S') }}</div>
+  {% set r = current or last %}
+  {% if r %}
+  <div class="bench-state {% if current %}bench-on{% else %}bench-done{% endif %}">
+    {% if current %}● Conferência em andamento{% else %}✓ Conferência confirmada{% endif %}
+  </div>
+  <div class="bench-platform"><span class="ptag ptag-{{ r.platform }}">{{ r.platform|platform }}</span></div>
+  <div class="bench-order"><span class="muted">Pedido</span> {{ r.external_order_id or '—' }}</div>
+  <div class="bench-sub">Devolução {{ r.external_return_id }}</div>
+  <div class="bench-sub">{% for i in r.items %}{{ i.seller_sku or i.product_name }}{% if not loop.last %} · {% endif %}{% endfor %}</div>
+  <div class="bench-sub muted">
+    {% if current %}Iniciada às {{ r.inspection_started_at|dt('%H:%M:%S') }}{% else %}Confirmada às {{ r.received_at|dt('%H:%M:%S') }}{% endif %}
+  </div>
+  {% else %}
+  <div class="bench-state">Aguardando: bipe a etiqueta do próximo pacote</div>
+  {% endif %}
+</section>
+<script>
+  // Relógio ao vivo (o vídeo mostra a hora exata, além do horário gravado no arquivo)
+  const el = document.querySelector("[data-clock]");
+  const tick = () => { el.textContent = new Date().toLocaleString("pt-BR"); };
+  tick(); setInterval(tick, 1000);
+</script>
+{% endblock %}

@@ -1,0 +1,302 @@
+{% extends "base.html" %}
+{% from "_captura.html" import captura %}
+{% block title %}Devolução {{ ret.external_order_id or ret.external_return_id }}{% endblock %}
+{% block content %}
+{% set late = ret.action_deadline and ret.action_deadline < now and can_decide %}
+<a class="back" href="/app">← Voltar</a>
+
+<section class="panel head frame frame-{{ ret.platform }}">
+  <div class="card-top">
+    <span><span class="ptag ptag-{{ ret.platform }}">{{ ret.platform|platform }}</span> <span class="store-name">{{ ret.store.label }}</span></span>
+    <span class="badge tone-{{ ret.status|status_tone }}">{{ ret.status|status_label }}</span>
+  </div>
+  <h1>Pedido {{ ret.external_order_id or '—' }}</h1>
+  <dl class="facts">
+    <div><dt>Motivo</dt><dd>{{ ret.reason_text or ret.reason_code or '—' }}</dd></div>
+    {% if buyer_comment %}<div class="wide"><dt>Comentário do comprador</dt><dd>“{{ buyer_comment }}”</dd></div>{% endif %}
+    <div><dt>Tipo</dt><dd>{{ ret.return_type|return_type }}{% if ret.kind == 'undelivered' %} · não entregue{% endif %}</dd></div>
+    <div><dt>Valor</dt><dd>{{ ret.refund_amount|money }}</dd></div>
+    <div><dt>Solicitada</dt><dd>{{ ret.requested_at|dt }}</dd></div>
+    {% if ret.tracking_number %}<div><dt>Rastreio</dt><dd class="mono">{{ ret.tracking_number }}</dd></div>{% endif %}
+    {% if ret.logistics_status %}
+    <div><dt>Pacote</dt><dd><span class="badge tone-{{ ret.logistics_status|logistics_tone }}">{{ ret.logistics_status|logistics }}</span>
+      {% if ret.logistics_detail %}<div class="small muted">{{ ret.logistics_detail }}{% if ret.logistics_event_at %} · {{ ret.logistics_event_at|dt }}{% endif %}</div>{% endif %}
+    </dd></div>
+    {% endif %}
+    {% if ret.action_deadline and can_decide %}
+    <div><dt>Prazo</dt><dd class="{% if late %}late{% endif %}">{{ ret.action_deadline|dt }}{% if late %} · vencido{% endif %}</dd></div>
+    {% endif %}
+    <div><dt>Nº na plataforma</dt><dd class="mono small">{{ ret.external_return_id }}</dd></div>
+  </dl>
+  <form method="post" action="/app/devolucoes/{{ ret.id }}/atualizar" data-busy>
+    <button class="btn btn-small" type="submit">Atualizar da plataforma</button>
+  </form>
+</section>
+
+{% if same_buyer %}
+{% set mism = same_buyer|selectattr('item_condition', 'equalto', 'mismatch')|list|length %}
+<section class="panel repeat-buyer">
+  <h2 class="kicker">⚠ Este comprador já devolveu {{ same_buyer|length }} {{ 'vez' if same_buyer|length == 1 else 'vezes' }}{% if mism %} · {{ mism }} com item diferente{% endif %}</h2>
+  <p class="small muted">Mesmo {{ 'usuário na Shopee' if ret.platform == 'shopee' else 'comprador no ' ~ (ret.platform|platform) }}. Confira o pacote com atenção e filme a abertura.</p>
+  <ul class="drawer-orders">
+    {% for o in same_buyer %}
+    {% set item = o['items'][0] if o['items'] else none %}
+    <li><a class="order-row" href="/app/devolucoes/{{ o.id }}">
+      <span class="order-top"><strong>{{ o.platform|platform }} · <span class="mono">{{ o.external_order_id or '—' }}</span></strong>
+        {% if o.received_at and o.item_condition %}<span class="badge tone-{{ {'resale': 'ok', 'defect': 'bad', 'mismatch': 'warn'}.get(o.item_condition, 'muted') }}">{{ {'resale': 'revenda', 'defect': 'defeito', 'mismatch': 'item diferente'}.get(o.item_condition, o.item_condition) }}</span>
+        {% else %}<span class="badge tone-{{ o.status|status_tone }}">{{ o.status|status_label }}</span>{% endif %}</span>
+      <span class="small muted">{{ o.reason_text or o.reason_code or 'Sem motivo' }}{% if item and item.seller_sku %} · {{ item.seller_sku }}{% endif %} · {{ o.requested_at|dt('%d/%m/%Y') }}</span>
+    </a></li>
+    {% endfor %}
+  </ul>
+</section>
+{% endif %}
+
+<section class="panel">
+  <h2>Itens</h2>
+  <ul class="items">
+    {% for i in ret.items %}
+    <li>
+      {% if i.image_url %}<img class="thumb" src="{{ i.image_url }}" alt="" loading="lazy">{% endif %}
+      <div>
+        <strong>{{ i.product_name or '—' }}</strong>
+        <div class="small">{% if i.sku_name %}{{ i.sku_name }} · {% endif %}<span class="mono">{{ i.seller_sku or 'SEM SKU' }}</span></div>
+        <div class="small muted">{{ i.quantity }} un · {{ i.refund_amount|money }}</div>
+      </div>
+    </li>
+    {% else %}
+    <li class="muted">Sem itens detalhados.</li>
+    {% endfor %}
+  </ul>
+</section>
+
+{% if buyer_media %}
+<section class="panel">
+  <h2>Enviado pelo comprador</h2>
+  <div class="gallery">
+    {% for m in buyer_media %}
+      {% if m.kind == 'video' %}
+      <a class="tile tile-video" href="{{ m.url }}" target="_blank" rel="noopener">▶ Vídeo</a>
+      {% else %}
+      <a class="tile" href="{{ m.url }}" target="_blank" rel="noopener"><img src="{{ m.url }}" alt="Foto do comprador" loading="lazy"></a>
+      {% endif %}
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+
+{% if ret.handled_outside_at and not ret.received_at %}
+<section class="panel">
+  <h2>Tratada fora do sistema</h2>
+  <p class="small muted">Marcada em {{ ret.handled_outside_at|dt }} por {{ ret.handled_outside_by or '—' }}: resolvida no
+    processo antigo, sem conferência, NF ou estoque por aqui.</p>
+  {% if can('inspect') %}
+  <form method="post" action="/app/devolucoes/{{ ret.id }}/voltar-fila">
+    <button class="btn btn-small" type="submit">Voltar para a fila e conferir aqui</button>
+  </form>
+  {% endif %}
+</section>
+{% endif %}
+
+{# ---------- conferência ---------- #}
+{% if can_inspect and can('inspect') %}
+<section class="panel accent" id="conferencia">
+  <h2>Conferência do pacote</h2>
+  {% if ret.item_condition %}
+  <p class="small muted">Sugestão pelo motivo do comprador: <strong>{{ ret.item_condition|condition }}</strong>. Confirme olhando a peça.</p>
+  {% endif %}
+  {% if ret.status in ('pending_review', 'awaiting_buyer_shipment') %}
+  <p class="small muted">O pacote ainda não consta como enviado. Só confira quando ele estiver em mãos.</p>
+  {% endif %}
+  <form method="post" action="/app/devolucoes/{{ ret.id }}/conferir" enctype="multipart/form-data" class="stack" data-busy>
+    <fieldset class="choice">
+      <legend>Como a peça chegou?</legend>
+      <label class="option">
+        <input type="radio" name="condicao" value="resale" required {% if ret.item_condition == 'resale' %}checked{% endif %}>
+        <span><strong>Revenda</strong><small>Peça boa. Emite NF e volta ao estoque</small></span>
+      </label>
+      <label class="option option-bad">
+        <input type="radio" name="condicao" value="defect" required data-needs-photo="Tire pelo menos uma foto do defeito antes de confirmar." {% if ret.item_condition == 'defect' %}checked{% endif %}>
+        <span><strong>Defeito</strong><small>Avariada. Vai para perda (NF 5.927). Motivo e foto obrigatórios</small></span>
+      </label>
+      <label class="option option-warn">
+        <input type="radio" name="condicao" value="mismatch" required data-needs-photo="Tire pelo menos uma foto do que veio no pacote antes de confirmar.">
+        <span><strong>Item diferente do pedido</strong><small>Veio outro produto no pacote (ex.: golpe). Emite NF sem estoque. Foto obrigatória</small></span>
+      </label>
+    </fieldset>
+    <fieldset class="reasons" data-defect-reasons {% if ret.item_condition != 'defect' %}hidden{% endif %}>
+      <legend>Qual é o defeito? <span class="req">obrigatório</span></legend>
+      <div class="reason-chips">
+        {% for key, label in defect_reasons.items() %}
+        <label class="reason-chip"><input type="radio" name="motivo_defeito" value="{{ key }}" {% if ret.item_condition == 'defect' %}required{% endif %}><span>{{ label }}</span></label>
+        {% endfor %}
+      </div>
+      <p class="small muted">Em "Outro", descreva o defeito nas observações. O motivo e as fotos ficam registrados como prova da perda.</p>
+    </fieldset>
+    <p class="flash flash-warn small" data-photo-hint hidden data-hint-mismatch="Tire foto do que veio no pacote e da etiqueta. Elas são a prova para contestar a devolução." data-hint-defect="Tire foto do defeito (de perto, mostrando o problema). Ela é a prova da perda.">Tire foto do que veio no pacote e da etiqueta. Elas são a prova para contestar a devolução.</p>
+    {{ captura('Fotos e vídeos da conferência') }}
+
+    <label>Observações
+      <textarea name="observacoes" rows="3" placeholder="Ex.: etiqueta cortada, mancha na manga, faltou o cinto"></textarea>
+    </label>
+    <button class="btn btn-primary btn-block" type="submit">Confirmar conferência</button>
+  </form>
+</section>
+{% elif ret.received_at %}
+<section class="panel">
+  <h2>Conferência</h2>
+  <p><span class="badge {% if ret.item_condition == 'defect' %}tone-bad{% elif ret.item_condition == 'mismatch' %}tone-warn{% else %}tone-ok{% endif %}">{{ ret.item_condition|condition }}</span></p>
+  <p class="small muted">Por {{ ret.received_by or '—' }} em {{ ret.received_at|dt }}</p>
+  {% if ret.inspection_notes %}<p>{{ ret.inspection_notes }}</p>{% endif %}
+  {% if ret.item_condition == 'mismatch' %}
+  <div class="flash flash-warn small">
+    <strong>Veio outro produto no pacote.</strong> A NF de devolução é emitida normalmente, sem lançar estoque.
+    {% if (can_decide or can_contest) and can('decide') %}
+    Conteste a devolução com as fotos abaixo como prova{% if ret.platform == 'shopee' %} (até 3 fotos JPG/PNG vão automaticamente para a Shopee){% endif %}.
+    <a class="btn btn-bad btn-block" style="margin-top:.6rem" href="/app/devolucoes/{{ ret.id }}/recusar?motivo_interno=item_divergente">Contestar / recusar devolução</a>
+    {% else %}
+    A devolução não está mais aberta para contestação aqui; se ainda der tempo, abra uma reclamação no painel do {{ ret.platform|platform }} com as fotos abaixo.
+    {% endif %}
+    {% if ret.platform == 'mercado_livre' %}
+    <div style="margin-top:.4rem">No Mercado Livre, escolha "O produto devolvido é diferente do que eu enviei": até 3 fotos JPG/PNG vão automaticamente.</div>
+    {% endif %}
+  </div>
+  {% endif %}
+  {% if can('inspect') and not ret.erp_stock_status %}
+  <details>
+    <summary class="small">Corrigir a condição</summary>
+    <form method="post" action="/app/devolucoes/{{ ret.id }}/condicao" class="row">
+      <select name="condicao">
+        {% for key, label in conditions.items() %}<option value="{{ key }}" {% if key == ret.item_condition %}selected{% endif %}>{{ label }}</option>{% endfor %}
+      </select>
+      <button class="btn btn-small" type="submit">Salvar</button>
+    </form>
+  </details>
+  {% endif %}
+</section>
+{% endif %}
+
+{# ---------- fotos e vídeos ---------- #}
+{% if ret.media or (can('media') and physical and not can_inspect) %}
+<section class="panel">
+  <h2>Fotos e vídeos{% if ret.media %} <span class="count">{{ ret.media|length }}</span>{% endif %}</h2>
+  {% if ret.media %}
+  <div class="gallery">
+    {% for m in ret.media %}
+    <figure class="tile-wrap">
+      {% if m.kind == 'video' %}
+      <video class="tile" src="/app/midias/{{ m.id }}" controls preload="metadata" playsinline></video>
+      {% else %}
+      <a class="tile" href="/app/midias/{{ m.id }}" target="_blank"><img src="/app/midias/{{ m.id }}" alt="Foto da conferência" loading="lazy"></a>
+      {% endif %}
+      <figcaption class="small muted">{{ m.created_at|dt('%d/%m %H:%M') }} · {{ m.size_bytes|size }}
+        {% if can('media') %}
+        <form method="post" action="/app/devolucoes/{{ ret.id }}/midias/{{ m.id }}/excluir" class="inline">
+          <button class="linkish danger" type="submit" data-confirm="Remover este arquivo?">remover</button>
+        </form>
+        {% endif %}
+      </figcaption>
+    </figure>
+    {% endfor %}
+  </div>
+  {% endif %}
+  {% if can('media') and not can_inspect %}
+  <form method="post" action="/app/devolucoes/{{ ret.id }}/midias" enctype="multipart/form-data" class="stack" data-busy>
+    {{ captura('Adicionar fotos ou vídeos') }}
+
+    <button class="btn" type="submit">Enviar</button>
+  </form>
+  {% endif %}
+</section>
+{% endif %}
+
+{# ---------- decisão no marketplace ---------- #}
+{% if can_decide and can('decide') %}
+<section class="panel">
+  <h2>Decisão · {{ ret.platform|platform }}</h2>
+  {% if physical and not ret.received_at %}
+  <p class="small muted">Dica: confira o pacote antes de decidir, se ele já chegou.</p>
+  {% endif %}
+  <div class="decide">
+    <form method="post" action="/app/devolucoes/{{ ret.id }}/aceitar" data-busy>
+      <button class="btn btn-ok btn-block" type="submit" data-confirm="Aceitar esta devolução ({{ ret.platform|platform }})?">Aceitar devolução</button>
+    </form>
+    <a class="btn btn-bad btn-block" href="/app/devolucoes/{{ ret.id }}/recusar">Recusar…</a>
+  </div>
+</section>
+{% elif can_contest and can('decide') %}
+<section class="panel">
+  <h2>Contestação · {{ ret.platform|platform }}</h2>
+  <p class="small muted">A Shopee já aceitou esta devolução (Devolução Fácil). Se o pacote veio errado, vazio, usado ou danificado, ainda dá para contestar com as fotos da conferência.</p>
+  <a class="btn btn-bad btn-block" href="/app/devolucoes/{{ ret.id }}/recusar">Contestar devolução…</a>
+</section>
+{% elif contest_closed and can('decide') %}
+<section class="panel">
+  <h2>Contestação · {{ ret.platform|platform }}</h2>
+  <p class="small muted">{% include "_sem_contestacao.html" %}</p>
+</section>
+{% elif ret.decision %}
+<section class="panel">
+  <h2>Decisão</h2>
+  <p><span class="badge {% if ret.decision == 'rejected' %}tone-bad{% else %}tone-ok{% endif %}">{{ 'Recusada' if ret.decision == 'rejected' else 'Aceita' }}</span>
+     <span class="small muted">por {{ ret.decided_by or '—' }} em {{ ret.decided_at|dt }}</span></p>
+  {% if ret.platform_reject_reason_text %}<p class="small">Motivo: {{ ret.platform_reject_reason_text }}</p>{% endif %}
+  {% if ret.reject_comment %}<p class="small">{{ ret.reject_comment }}</p>{% endif %}
+</section>
+{% endif %}
+
+{# ---------- Olist ---------- #}
+{% if physical or ret.erp_order_id %}
+<section class="panel">
+  <h2>Olist</h2>
+  <dl class="facts">
+    <div><dt>Pedido Olist</dt><dd>{{ ret.erp_order_number or 'Não vinculado' }}</dd></div>
+    <div><dt>NF de venda</dt><dd>{{ 'Encontrada' if ret.erp_sale_invoice_id else '—' }}</dd></div>
+    <div><dt>NF de devolução</dt><dd>{{ ret.erp_return_invoice_status|invoice }}{% if ret.erp_return_invoice_number %} · nº {{ ret.erp_return_invoice_number }}{% endif %}</dd></div>
+    <div><dt>Estoque</dt><dd>{{ ret.erp_stock_status|stock }}</dd></div>
+  </dl>
+  {% if ret.erp_last_error %}<p class="flash flash-bad small">{{ ret.erp_last_error }}</p>{% endif %}
+  {% if can('erp') %}
+  <div class="row wrap">
+    {% if not ret.erp_order_id %}
+    <form method="post" action="/app/devolucoes/{{ ret.id }}/olist/vincular" data-busy><button class="btn btn-small" type="submit">Vincular pedido</button></form>
+    {% endif %}
+    {% if ret.received_at and (not ret.erp_return_invoice_id or ret.erp_return_invoice_status == 'cancelled') and invoice_mode != 'off' %}
+    <form method="post" action="/app/devolucoes/{{ ret.id }}/olist/gerar-nf" data-busy><button class="btn btn-small" type="submit">Gerar NF de devolução</button></form>
+    {% endif %}
+    {% if ret.erp_return_invoice_id %}
+    <form method="post" action="/app/devolucoes/{{ ret.id }}/olist/atualizar-nf" data-busy><button class="btn btn-small" type="submit">Atualizar situação da NF</button></form>
+    {% endif %}
+  </div>
+  {% endif %}
+</section>
+{% endif %}
+
+{# ---------- notas e histórico ---------- #}
+<section class="panel">
+  <h2>Notas internas</h2>
+  {% if ret.internal_notes %}<pre class="notes">{{ ret.internal_notes }}</pre>{% endif %}
+  {% if can('note') %}
+  <form method="post" action="/app/devolucoes/{{ ret.id }}/nota" class="stack">
+    <textarea name="nota" rows="2" placeholder="Anotação para a equipe (não vai para o marketplace)" required></textarea>
+    <button class="btn btn-small" type="submit">Salvar nota</button>
+  </form>
+  {% endif %}
+</section>
+
+<section class="panel">
+  <details>
+    <summary><h2 class="inline">Histórico <span class="count">{{ events|length }}</span></h2></summary>
+    <ol class="timeline">
+      {% for e in events %}
+      <li>
+        <div class="small"><strong>{{ e.event_type|event_label }}</strong>
+          {% if e.to_status %}→ {{ e.to_status|status_label }}{% endif %}</div>
+        {% if e.message %}<div class="small">{{ e.message }}</div>{% endif %}
+        <div class="small muted">{{ e.created_at|dt }}{% if e.actor %} · {{ e.actor }}{% endif %}</div>
+      </li>
+      {% endfor %}
+    </ol>
+  </details>
+</section>
+{% endblock %}

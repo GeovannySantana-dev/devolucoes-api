@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}Recusar devolução{% endblock %}
+{% block content %}
+<a class="back" href="/app/devolucoes/{{ ret.id }}">← Voltar para a devolução</a>
+<section class="panel">
+  <h1>Recusar devolução</h1>
+  <p class="small muted">{{ ret.platform|platform }} · pedido {{ ret.external_order_id }} · {{ ret.reason_text or '' }}</p>
+  {% if ret.item_condition == 'mismatch' %}
+  <p class="flash flash-warn small">Conferência: veio outro produto no pacote. Escolha o motivo que fala de produto diferente/trocado e descreva o que veio no comentário.</p>
+  {% elif ret.item_condition == 'resale' and ret.condition_source == 'manual' and not ret.decision and reasons %}
+  <p class="flash flash-warn small">Conferida como revenda: esta devolução será aprovada automaticamente. Só recuse se um dos motivos abaixo for verdadeiro.</p>
+  {% endif %}
+
+  {% if not reasons %}
+  <p class="flash flash-bad">{% include "_sem_contestacao.html" %}</p>
+  {% else %}
+  <form method="post" action="/app/devolucoes/{{ ret.id }}/recusar" class="stack" data-busy>
+    <fieldset class="choice">
+      <legend>Motivo enviado ao marketplace ({{ ret.platform|platform }})</legend>
+      {% for r in reasons %}
+      <label class="option option-plain">
+        <input type="radio" name="motivo_plataforma" value="{{ r.code }}" required
+               {% if ret.item_condition == 'mismatch' and 'diferente' in r.label|lower %}checked{% endif %}>
+        <span>{{ r.label }}</span>
+      </label>
+      {% endfor %}
+    </fieldset>
+    <label>Comentário (vai para o comprador/marketplace)
+      <textarea name="comentario" rows="3" maxlength="500" placeholder="Explique o que foi encontrado na conferência"></textarea>
+    </label>
+    <label>Motivo interno (relatórios)
+      <select name="motivo_interno">
+        <option value="">— escolha —</option>
+        {% for r in internal %}<option value="{{ r.code }}" {% if r.code == preselect %}selected{% endif %}>{{ r.label }}</option>{% endfor %}
+      </select>
+    </label>
+    <button class="btn btn-bad btn-block" type="submit" data-confirm="Confirmar a recusa ({{ ret.platform|platform }})?">Recusar devolução</button>
+  </form>
+  <a class="btn btn-block" style="margin-top:.6rem" href="/app/devolucoes/{{ ret.id }}">Nenhum motivo serve: voltar</a>
+  {% endif %}
+</section>
+{% endblock %}

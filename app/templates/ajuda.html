@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% block title %}Como usar{% endblock %}
+{% block content %}
+<a class="back" href="/app">← Voltar</a>
+<h1>Como usar o app de devoluções</h1>
+<p class="muted small">Guia rápido para o dia a dia. Tudo o que você faz fica registrado com o seu nome.</p>
+
+<section class="panel">
+  <h2>1. As filas da tela inicial</h2>
+  <dl class="guide">
+    <dt>Aguardando decisão</dt><dd>O marketplace espera a loja aceitar ou recusar. Comece pelas que estão com <strong>prazo vencendo</strong> (aparecem primeiro).</dd>
+    <dt>Para conferir</dt><dd>Pacotes que estão chegando ou já chegaram e ainda não foram conferidos. Os <strong>"📦 Entregue na loja"</strong> ficam no topo.</dd>
+    <dt>Vencidas</dt><dd>Passaram do prazo de resposta. Resolva o quanto antes: o marketplace pode decidir sozinho contra a loja.</dd>
+    <dt>Erros no Olist</dt><dd>A NF de devolução não foi gerada. Abra e veja a mensagem; normalmente é SKU diferente do Olist ou pedido sem NF de venda.</dd>
+  </dl>
+</section>
+
+<section class="panel">
+  <h2>2. Chegou um pacote</h2>
+  <ol class="steps">
+    <li><strong>Bipe a etiqueta</strong> com o leitor (em qualquer tela) ou digite o rastreio/pedido na busca. A devolução abre sozinha.</li>
+    <li>Se aparecer "Nada por aqui", o pacote pode ser um <strong>não entregue</strong> que voltou pela transportadora: use <a href="/app/nao-entregue">Registrar pacote não entregue</a> e bipe o código do DANFE.</li>
+    <li>Abra o pacote e confira se é o mesmo produto, tamanho e cor do pedido (veja os <strong>Itens</strong> e as fotos do comprador, quando houver).</li>
+  </ol>
+</section>
+
+<section class="panel">
+  <h2>3. A conferência</h2>
+  <ol class="steps">
+    <li>Toque em <strong>📷 Tirar foto ou escolher arquivos</strong>: fotografe a peça, a etiqueta e qualquer problema (mancha, rasgo, falta de item). O app reduz o tamanho das fotos sozinho.</li>
+    <li>Escolha a condição:
+      <ul>
+        <li><strong>Revenda</strong>: peça em perfeito estado. Gera a NF e <strong>volta ao estoque</strong>.</li>
+        <li><strong>Defeito</strong>: avariada, manchada, usada. Gera a NF e <strong>não</strong> volta ao estoque.</li>
+        <li><strong>Item diferente do pedido</strong>: veio outro produto (golpe, ex.: uma crocs no lugar do vestido). <strong>Foto obrigatória</strong>. Gera a NF, não mexe no estoque, e o app leva você direto para <strong>contestar</strong>.</li>
+      </ul>
+    </li>
+    <li>Escreva nas <strong>Observações</strong> o que viu (ex.: "faltou o cinto", "etiqueta cortada").</li>
+    <li>Toque em <strong>Confirmar conferência</strong>. A NF de devolução vai para o Olist como rascunho.</li>
+  </ol>
+  <p class="small muted">Errou a condição? No detalhe, use "Corrigir a condição" (antes de o estoque ser lançado).</p>
+</section>
+
+<section class="panel">
+  <h2>4. Aceitar ou recusar</h2>
+  <ul class="steps">
+    <li><strong>Aceitar devolução</strong>: confirma no marketplace (o reembolso segue a regra dele).</li>
+    <li><strong>Recusar… / Contestar…</strong>: escolha o motivo do marketplace, escreva o comentário e envie. As <strong>fotos da conferência vão junto</strong> automaticamente (até 3, JPG/PNG). Por isso, <strong>confira e fotografe antes de recusar</strong>.</li>
+    <li>Na Shopee dá para contestar mesmo depois que ela já aceitou (Devolução Fácil).</li>
+    <li>Vídeos ficam guardados aqui, mas não vão para o marketplace: se ele pedir vídeo, envie pelo painel dele.</li>
+  </ul>
+</section>
+
+<section class="panel">
+  <h2>5. Dicas</h2>
+  <ul class="steps">
+    <li>Bipe → confira → confirme → bipe o próximo. Não precisa voltar para a fila entre um e outro.</li>
+    <li>"Atualizar da plataforma" (no detalhe) busca o status mais novo no marketplace na hora.</li>
+    <li>Use as <strong>Notas internas</strong> para recados à equipe; elas não vão para o marketplace nem para o cliente.</li>
+    <li>Viu algo estranho ou um erro? Anote o número do pedido e avise o gestor.</li>
+  </ul>
+</section>
+{% endblock %}

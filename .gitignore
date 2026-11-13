@@ -1,0 +1,15 @@
+.venv/
+__pycache__/
+.pytest_cache/
+.env
+backups/
+logs/
+media/
+# planilhas e pacotes gerados (podem ter dados de clientes)
+*.xlsx
+*.zip
+# configurações locais de editor/ferramentas
+.claude/
+.vscode/
+# gravações da câmera da bancada
+gravacoes/

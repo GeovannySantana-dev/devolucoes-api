@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}Criar senha nova{% endblock %}
+{% block content %}
+<section class="login">
+  <h1>Criar senha nova</h1>
+  <p class="muted">Use pelo menos 8 caracteres. Depois de salvar, você já entra no app.</p>
+  <form method="post" action="/app/nova-senha" class="stack" data-busy>
+    <input type="hidden" name="t" value="{{ token }}">
+    <label>Senha nova
+      <input type="password" name="senha" autocomplete="new-password" minlength="8" required autofocus>
+    </label>
+    <label>Repita a senha nova
+      <input type="password" name="repetir" autocomplete="new-password" minlength="8" required>
+    </label>
+    <button class="btn btn-primary btn-block" type="submit">Salvar a senha nova</button>
+  </form>
+</section>
+{% endblock %}
