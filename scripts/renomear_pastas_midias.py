@@ -1,4 +1,4 @@
-# Central de Devoluções — Copyright (c) 2026 Geovanny Santana.
+# Central de Devoluções — Copyright (c) 2026 Geovanny Santana Bonfim.
 # Licenciado sob a PolyForm Noncommercial 1.0.0 (ver LICENSE).
 # Uso comercial ou venda exigem autorização por escrito do autor.
 """Move as fotos/vídeos antigos da pasta "<id da devolução>/" para "<plataforma>/<número do pedido>/".

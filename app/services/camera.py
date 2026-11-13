@@ -1,4 +1,4 @@
-# Central de Devoluções — Copyright (c) 2026 Geovanny Santana.
+# Central de Devoluções — Copyright (c) 2026 Geovanny Santana Bonfim.
 # Licenciado sob a PolyForm Noncommercial 1.0.0 (ver LICENSE).
 # Uso comercial ou venda exigem autorização por escrito do autor.
 """Câmera da bancada: recorta, da gravação contínua, o trecho de cada conferência e anexa na devolução.

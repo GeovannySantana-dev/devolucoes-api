@@ -168,7 +168,7 @@ tests/            300 testes
 
 ## Licença e autoria
 
-Copyright (c) 2026 Geovanny Santana. Licenciado sob a
+Copyright (c) 2026 Geovanny Santana Bonfim. Licenciado sob a
 [PolyForm Noncommercial 1.0.0](LICENSE): o código pode ser visto, estudado e usado para fins não comerciais,
 mas **qualquer uso comercial — vender, revender, sublicenciar, oferecer como serviço ou operar com fins
 lucrativos — exige autorização por escrito do autor**. Ver [AUTHORS](AUTHORS).
